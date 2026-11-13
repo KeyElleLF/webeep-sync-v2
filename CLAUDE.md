@@ -21,7 +21,9 @@ annotate in corsivo nel piano di lavoro (§11).
 | 5 – app installabile | ✅ installer NSIS creato; **non ancora provato installato** dall'utente |
 | 4 – CI, release, updater, Mac/Linux, diagnostica, i18n EN | ⏳ **da fare: è il prossimo passo** |
 
-Ultimo commit: `367a4d3` (12 commit su `main`). Test: 199 Rust, tutti verdi; clippy
+Storia riscritta il 2026-11-13 in un unico commit pubblico (`99e1428`, versione 0.1.3) in vista della
+pubblicazione; identità git anonima (`…@users.noreply.github.com`). Guida per sviluppatori in
+inglese: `docs/ARCHITECTURE.md`, `CONTRIBUTING.md`. Test (allora 199) tutti verdi; clippy
 `-D warnings` pulito; `npm run check` pulito. Copertura circa 81% complessiva, 93–100% sulla
 logica di sync e corsi.
 
