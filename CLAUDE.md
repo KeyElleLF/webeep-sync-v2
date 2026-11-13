@@ -31,11 +31,13 @@ logica di sync e corsi.
 - **Niente background:** chiudere la finestra chiude l'app. Niente tray né avvio con Windows. I
   controlli periodici (avvisi ogni 15 min, scadenze ogni ora, sync automatico) girano **solo a
   finestra aperta**. Non reintrodurli.
-- **Ogni commit va pubblicato** con `git push` sul repo **privato**
-  `github.com/KeyElleLF/webeep-sync-v2` (branch `main`). Prima del push controllare che non ci
-  siano `fixtures/raw/`, token o dati personali in stage. **Non** rendere pubblico il repo senza
-  chiederlo: questo file contiene ancora nomi reali di docenti negli esempi (§6.1-bis,
-  "Verifiche"), da ripulire prima.
+- **Ogni commit va pubblicato** con `git push` sul repo **pubblico**
+  `github.com/KeyElleLF/webeep-sync-v2` (remote `origin`, branch `main`; pubblicato il
+  2026-11-13). **Il repository è pubblico:** prima di ogni commit controllare che non ci siano
+  `fixtures/raw/`, token, dati personali, nomi di docenti o percorsi personali (vanno in
+  `CLAUDE.local.md`, ignorato da git). Commit con l'identità anonima già impostata nel repository.
+  Il vecchio repository privato (`webeep-sync-v2-private`, remote `private`) è solo un archivio:
+  niente più push lì.
 - **Il materiale non va mai perso:** nessuna sovrascrittura dei file modificati, eliminazioni solo
   via Cestino e solo dei file scaricati dall'app (§6.5, §7).
 - **«Materiali» appiattita di default**, come la v1, per compatibilità con `Desktop\polimi`.
