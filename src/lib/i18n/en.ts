@@ -112,7 +112,7 @@ export const en: Record<keyof typeof it, string> = {
   "courses.source.startDate": "from the start date of the course",
   "courses.semesterOf": "Semester of {name}",
   "courses.auto": "Automatic",
-  "courses.autoWith": "Automatic: {semester}",
+  "courses.autoWith": "Auto: {semester}",
   "courses.folderName": "Folder name",
   "courses.restore": "Restore",
   "courses.passed": "Passed",

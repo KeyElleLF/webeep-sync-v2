@@ -109,7 +109,7 @@ export const it = {
   "courses.source.startDate": "dalla data di inizio del corso",
   "courses.semesterOf": "Semestre di {name}",
   "courses.auto": "Automatico",
-  "courses.autoWith": "Automatico: {semester}",
+  "courses.autoWith": "Auto: {semester}",
   "courses.folderName": "Nome della cartella",
   "courses.restore": "Ripristina",
   "courses.passed": "Superato",
