@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { CourseLink, LinkKind } from "$lib/api";
+  import { displayName, t, type MessageKey } from "$lib/i18n/index.svelte";
 
   interface Props {
     /** Links of the courses being synced. */
@@ -14,17 +15,17 @@
 
   let { links, courseNames, upcoming, disabled, onopen, onfolder }: Props = $props();
 
-  const GROUPS: { kind: LinkKind; title: string; collapsed: boolean }[] = [
-    { kind: "material", title: "Materiale", collapsed: false },
-    { kind: "recording", title: "Registrazioni e lezioni online", collapsed: false },
-    { kind: "other", title: "Altri link", collapsed: true },
+  const GROUPS: { kind: LinkKind; title: MessageKey; collapsed: boolean }[] = [
+    { kind: "material", title: "links.group.material", collapsed: false },
+    { kind: "recording", title: "links.group.recording", collapsed: false },
+    { kind: "other", title: "links.group.other", collapsed: true },
   ];
 
   const courses = $derived(
     [...new Set(links.map((l) => l.courseId))]
       .map((id) => ({
         id,
-        name: courseNames.get(id) ?? `Corso ${id}`,
+        name: courseNames.get(id) ?? t("common.courseFallback", { id }),
         groups: GROUPS.map((g) => ({
           ...g,
           items: links.filter((l) => l.courseId === id && l.kind === g.kind),
@@ -48,17 +49,10 @@
   }
 </script>
 
-<p class="hint">
-  Link che i docenti mettono su WeBeep al posto dei file (cartelle OneDrive, registrazioni,
-  repository). Si aprono nel browser: i file scaricati da lì mettili nella cartella del corso, in una
-  sottocartella tua. L'app non li tocca mai.
-</p>
+<p class="hint">{t("links.hint")}</p>
 
 {#if courses.length === 0}
-  <p class="muted">
-    Nessun link nei corsi sincronizzati. I link compaiono dopo un sync: se un corso ha solo link e
-    nessun file, assicurati che sia selezionato nella scheda Corsi.
-  </p>
+  <p class="muted">{t("links.empty")}</p>
 {/if}
 
 <div class="grid">
@@ -69,11 +63,8 @@
 
 {#if later.length > 0}
   <details class="later" open={laterHasNew}>
-    <summary>Corsi del prossimo semestre <span class="count">{later.length}</span></summary>
-    <p class="hint">
-      Le lezioni non sono ancora iniziate: di solito i link (registrazioni comprese) sono ancora
-      vuoti.
-    </p>
+    <summary>{t("links.nextSemester")} <span class="count">{later.length}</span></summary>
+    <p class="hint">{t("links.nextSemesterHint")}</p>
     <div class="grid">
       {#each later as course (course.id)}
         {@render card(course)}
@@ -87,22 +78,22 @@
     <header>
       <h2>{course.name}</h2>
       <button class="small" {disabled} onclick={() => onfolder(course.id)}>
-        Apri cartella del corso
+        {t("links.openFolder")}
       </button>
     </header>
 
     {#each course.groups as group (group.kind)}
       <details open={!group.collapsed || group.items.some((l) => !l.seen)}>
-        <summary>{group.title} <span class="count">{group.items.length}</span></summary>
+        <summary>{t(group.title)} <span class="count">{group.items.length}</span></summary>
         <ul>
           {#each group.items as link (link.id)}
             <li>
               <button class="open" title={link.url} onclick={() => onopen(link)}>
-                <span class="name">{link.name}</span>
-                {#if !link.seen}<span class="badge">nuovo</span>{/if}
+                <span class="name">{displayName(link.name)}</span>
+                {#if !link.seen}<span class="badge">{t("links.new")}</span>{/if}
               </button>
-              <span class="where ellipsis" title="{link.section} · {link.url}">
-                {host(link.url)} · {link.section}
+              <span class="where ellipsis" title="{displayName(link.section)} · {link.url}">
+                {host(link.url)} · {displayName(link.section)}
               </span>
             </li>
           {/each}

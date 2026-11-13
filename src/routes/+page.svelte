@@ -22,6 +22,15 @@
     type SyncProgress,
   } from "$lib/api";
   import { formatBytes, isActive } from "$lib/format";
+  import {
+    type Lang,
+    type MessageKey,
+    lang,
+    setLang,
+    systemLang,
+    t,
+    tn,
+  } from "$lib/i18n/index.svelte";
   import { openExternal } from "$lib/links";
   import Board from "$lib/components/Board.svelte";
   import CleanupDialog from "$lib/components/CleanupDialog.svelte";
@@ -36,25 +45,24 @@
   import SyncSummary from "$lib/components/SyncSummary.svelte";
 
   type Tab = "courses" | "links" | "board" | "deadlines" | "settings";
-  const TITLES: Record<Tab, string> = {
-    courses: "Corsi",
-    links: "Link",
-    board: "Bacheca",
-    deadlines: "Scadenze",
-    settings: "Impostazioni",
+  const TITLES: Record<Tab, MessageKey> = {
+    courses: "nav.courses",
+    links: "nav.links",
+    board: "nav.board",
+    deadlines: "nav.deadlines",
+    settings: "nav.settings",
   };
-  const SYNC_LABEL = "Sincronizzazione in corso…";
+  const SYNC_LABEL: MessageKey = "status.syncing";
   const FOLDER_MESSAGES = {
     same: null,
-    moved: "Cartella rinominata.",
-    repointed:
-      "Il corso ora usa la cartella indicata: al prossimo sync i file già presenti e identici " +
-      "verranno adottati senza riscaricarli.",
+    moved: "courses.folderMoved",
+    repointed: "courses.folderRepointed",
   } as const;
 
   let tab = $state<Tab>("courses");
   let session = $state<SessionInfo | null>(null);
-  let busy = $state<string | null>(null);
+  /** What the app is doing, as a text key (translated when shown, so it follows the language). */
+  let busy = $state<MessageKey | null>(null);
   let error = $state<string | null>(null);
   let notice = $state<string | null>(null);
   let root = $state<string | null>(null);
@@ -88,12 +96,12 @@
   const navItems = $derived(
     (Object.keys(TITLES) as Tab[]).map((id) => ({
       id,
-      label: TITLES[id],
+      label: t(TITLES[id]),
       badge: id === "board" ? unread : id === "links" ? newLinks : undefined,
     })),
   );
 
-  async function run<T>(label: string, action: () => Promise<T>): Promise<T | undefined> {
+  async function run<T>(label: MessageKey, action: () => Promise<T>): Promise<T | undefined> {
     busy = label;
     error = null;
     notice = null;
@@ -107,37 +115,51 @@
     }
   }
 
+  /** The saved language, or Windows' one on the first run (then saved). */
+  async function initLanguage() {
+    const saved = await api.getLanguage().catch(() => null);
+    const chosen = saved ?? systemLang();
+    setLang(chosen);
+    if (!saved) void api.setLanguage(chosen).catch(() => undefined);
+  }
+
+  async function changeLanguage(next: Lang) {
+    setLang(next);
+    await run("status.saving", () => api.setLanguage(next));
+  }
+
   async function refresh() {
-    session = (await run("Verifico la sessione…", api.authStatus)) ?? session;
+    await initLanguage();
+    session = (await run("status.checkingSession", api.authStatus)) ?? session;
     if (session?.loggedIn) await loadLibrary();
   }
 
   async function loadLibrary() {
-    root = (await run("Leggo le impostazioni…", api.syncRoot)) ?? root;
-    settings = (await run("Leggo le impostazioni…", api.getSettings)) ?? settings;
-    lastSync = (await run("Leggo le impostazioni…", api.lastSync)) ?? lastSync;
-    announcements = (await run("Leggo la bacheca…", api.listAnnouncements)) ?? announcements;
+    root = (await run("status.readingSettings", api.syncRoot)) ?? root;
+    settings = (await run("status.readingSettings", api.getSettings)) ?? settings;
+    lastSync = (await run("status.readingSettings", api.lastSync)) ?? lastSync;
+    announcements = (await run("status.readingBoard", api.listAnnouncements)) ?? announcements;
     await loadLinks();
-    planStatus = (await run("Leggo le impostazioni…", api.studyPlanStatus)) ?? null;
-    muted = (await run("Leggo la bacheca…", api.mutedCourses)) ?? muted;
+    planStatus = (await run("status.readingSettings", api.studyPlanStatus)) ?? null;
+    muted = (await run("status.readingBoard", api.mutedCourses)) ?? muted;
     await loadCourses();
-    cleanups = (await run("Controllo i corsi superati…", api.pendingCleanups)) ?? cleanups;
+    cleanups = (await run("status.checkingPassed", api.pendingCleanups)) ?? cleanups;
   }
 
   async function loadCourses() {
-    const listing = await run("Carico i corsi da WeBeep…", api.listCourses);
+    const listing = await run("status.loadingCourses", api.listCourses);
     if (!listing) return;
     courses = listing.courses;
     suggestions = listing.suggestions;
   }
 
   async function login() {
-    session = (await run("Completa l'accesso nella finestra di WeBeep…", api.login)) ?? session;
+    session = (await run("status.loggingIn", api.login)) ?? session;
     if (session?.loggedIn) await loadLibrary();
   }
 
   async function logout() {
-    await run("Esco…", api.logout);
+    await run("status.loggingOut", api.logout);
     session = { loggedIn: false, fullname: null, moodleRelease: null };
     courses = null;
     summaries = null;
@@ -146,7 +168,7 @@
   }
 
   async function chooseRoot() {
-    const chosen = await run("Scegli la cartella…", api.chooseSyncRoot);
+    const chosen = await run("status.choosingFolder", api.chooseSyncRoot);
     if (chosen) {
       root = chosen;
       await loadCourses();
@@ -157,22 +179,27 @@
     const update = (value: boolean) =>
       (courses = courses?.map((c) => (c.id === course.id ? { ...c, selected: value } : c)) ?? null);
     update(selected);
-    await run("Salvo la selezione…", () => api.setCourseSelected(course.id, selected));
+    await run("status.savingSelection", () => api.setCourseSelected(course.id, selected));
     if (error) update(!selected);
   }
 
   async function rename(course: CourseRow, folder: string) {
-    const change = await run("Cambio la cartella…", () => api.setCourseFolder(course.id, folder));
+    const change = await run("status.changingFolder", () =>
+      api.setCourseFolder(course.id, folder),
+    );
     if (change === undefined) return;
     await loadCourses();
-    notice = FOLDER_MESSAGES[change];
+    const message = FOLDER_MESSAGES[change];
+    notice = message ? t(message) : null;
   }
 
   async function setState(teachingKey: string, state: ManualState | null) {
-    const outcome = await run("Aggiorno il corso…", () => api.setTeachingState(teachingKey, state));
+    const outcome = await run("status.updatingCourse", () =>
+      api.setTeachingState(teachingKey, state),
+    );
     if (!outcome) return;
     await loadCourses();
-    cleanups = (await run("Controllo i corsi superati…", api.pendingCleanups)) ?? cleanups;
+    cleanups = (await run("status.checkingPassed", api.pendingCleanups)) ?? cleanups;
     cleanupLater = false;
     notice = stateNotice(outcome);
   }
@@ -182,39 +209,42 @@
     const trashed = outcome.cleaned.reduce((n, r) => n + r.trashed, 0);
     const freed = outcome.cleaned.reduce((n, r) => n + r.freed, 0);
     const kept = outcome.cleaned.reduce((n, r) => n + r.kept, 0);
-    const keptText = kept > 0 ? ` ${kept} file modificati da te sono rimasti al loro posto.` : "";
-    return `${trashed} file spostati nel Cestino (${formatBytes(freed)}).${keptText}`;
+    const trashedText = tn("cleanup.trashed", trashed, { size: formatBytes(freed) });
+    return kept > 0 ? `${trashedText} ${tn("cleanup.keptModified", kept)}` : trashedText;
   }
 
   async function setSemester(course: CourseRow, semester: 1 | 2 | null) {
-    await run("Salvo il semestre…", () => api.setTeachingSemester(course.teachingKey, semester));
+    await run("status.savingSemester", () =>
+      api.setTeachingSemester(course.teachingKey, semester),
+    );
     await loadCourses();
   }
 
   async function dismiss(suggestion: PassedSuggestion) {
-    await run("Salvo…", () => api.dismissSuggestion(suggestion.courseId));
+    await run("status.saving", () => api.dismissSuggestion(suggestion.courseId));
     suggestions = suggestions.filter((s) => s.courseId !== suggestion.courseId);
   }
 
   async function confirmCleanup(preview: CleanupPreview, includeModified: boolean) {
-    const report = await run("Sposto i file nel Cestino…", () =>
+    const report = await run("status.trashing", () =>
       api.confirmCleanup(preview.courseId, includeModified),
     );
     if (!report) return;
     cleanups = cleanups.filter((c) => c.courseId !== preview.courseId);
+    const trashed = tn("cleanup.trashed", report.trashed, { size: formatBytes(report.freed) });
     const skipped = report.skipped.length
-      ? ` ${report.skipped.length} file non spostati (forse aperti in un altro programma).`
+      ? ` ${tn("cleanup.skipped", report.skipped.length)}`
       : "";
-    notice = `${preview.name}: ${report.trashed} file spostati nel Cestino (${formatBytes(report.freed)}).${skipped}`;
+    notice = `${preview.name}: ${trashed}${skipped}`;
   }
 
   async function declineCleanup(preview: CleanupPreview) {
-    await run("Salvo…", () => api.declineCleanup(preview.courseId));
+    await run("status.saving", () => api.declineCleanup(preview.courseId));
     cleanups = cleanups.filter((c) => c.courseId !== preview.courseId);
   }
 
   async function saveSettings(next: Settings) {
-    settings = (await run("Salvo le impostazioni…", () => api.setSettings(next))) ?? settings;
+    settings = (await run("status.savingSettings", () => api.setSettings(next))) ?? settings;
   }
 
   async function sync() {
@@ -242,17 +272,17 @@
   }
 
   async function loadLinks() {
-    links = (await run("Leggo i link…", api.listLinks)) ?? links;
+    links = (await run("status.readingLinks", api.listLinks)) ?? links;
   }
 
   async function openLink(link: CourseLink) {
-    await run("Apro il link nel browser…", () => openExternal(link.url));
+    await run("status.openingLink", () => openExternal(link.url));
     if (link.seen || error) return;
     await markLinksSeen(link.id);
   }
 
   async function markLinksSeen(id: number | null) {
-    await run("Salvo…", () => api.markLinksSeen(id));
+    await run("status.saving", () => api.markLinksSeen(id));
     if (error) return;
     links = links.map((l) => (id === null || l.id === id ? { ...l, seen: true } : l));
   }
@@ -265,7 +295,7 @@
   /** Imports the plan from the picker or from a dropped file, then refreshes the courses. */
   async function importPlan(source: () => Promise<PlanStatus | null>) {
     planFeedback = null;
-    const result = await run("Leggo il piano di studi…", source);
+    const result = await run("status.readingPlan", source);
     if (error) {
       planFeedback = { error: true, text: error };
       return;
@@ -276,45 +306,44 @@
     const matched = (courses ?? []).filter(
       (c) => c.current && c.semester?.source === "studyPlan",
     ).length;
-    planFeedback = {
-      error: false,
-      text:
-        `Fatto: letti ${result.teachings} insegnamenti (${result.first} del 1° semestre, ` +
-        `${result.second} del 2°). ${matched} ${matched === 1 ? "corso di quest'anno ora segue" : "corsi di quest'anno ora seguono"} il piano.`,
-    };
+    const imported = tn("plan.imported", result.teachings, {
+      first: result.first,
+      second: result.second,
+    });
+    planFeedback = { error: false, text: `${imported} ${tn("plan.matched", matched)}` };
   }
 
   async function clearPlan() {
-    await run("Rimuovo il piano di studi…", api.clearStudyPlan);
+    await run("status.removingPlan", api.clearStudyPlan);
     if (error) {
       planFeedback = { error: true, text: error };
       return;
     }
     planStatus = null;
-    planFeedback = { error: false, text: "Piano rimosso: i semestri tornano automatici." };
+    planFeedback = { error: false, text: t("plan.removed") };
     await loadCourses();
   }
 
   async function openCourseFolder(courseId: number) {
-    await run("Apro la cartella del corso…", () => api.openCourseFolder(courseId));
+    await run("status.openingCourseFolder", () => api.openCourseFolder(courseId));
   }
 
   async function markRead(id: number | null) {
-    await run("Salvo…", () => api.markAnnouncementsRead(id));
+    await run("status.saving", () => api.markAnnouncementsRead(id));
     announcements = announcements.map((a) => (id === null || a.id === id ? { ...a, read: true } : a));
   }
 
   async function refreshBoard() {
-    announcements = (await run("Controllo gli avvisi su WeBeep…", api.refreshAnnouncements)) ?? announcements;
+    announcements = (await run("status.checkingBoard", api.refreshAnnouncements)) ?? announcements;
   }
 
   async function mute(courseId: number, value: boolean) {
-    await run("Salvo…", () => api.setCourseMuted(courseId, value));
+    await run("status.saving", () => api.setCourseMuted(courseId, value));
     muted = value ? [...muted, courseId] : muted.filter((id) => id !== courseId);
   }
 
   async function loadDeadlines() {
-    deadlines = (await run("Carico le scadenze…", api.listDeadlines)) ?? deadlines;
+    deadlines = (await run("status.loadingDeadlines", api.listDeadlines)) ?? deadlines;
   }
 
   function open(next: Tab) {
@@ -355,26 +384,26 @@
 
     <main>
       <header class="page-head">
-        <h1>{TITLES[tab]}</h1>
+        <h1>{t(TITLES[tab])}</h1>
         <div class="actions">
           {#if tab === "courses"}
             <span class="root ellipsis" title={root ?? undefined}>
-              {root ?? "Nessuna cartella scelta"}
+              {root ?? t("courses.noRoot")}
             </span>
             <button onclick={chooseRoot} disabled={!idle}>
-              {root ? "Cambia cartella…" : "Scegli cartella…"}
+              {root ? t("common.changeFolder") : t("common.chooseFolder")}
             </button>
           {:else if tab === "links"}
             <button disabled={!idle || newLinks === 0} onclick={() => markLinksSeen(null)}>
-              Segna tutti come visti
+              {t("links.markAllSeen")}
             </button>
           {:else if tab === "board"}
-            <button disabled={!idle} onclick={refreshBoard}>Controlla ora</button>
+            <button disabled={!idle} onclick={refreshBoard}>{t("board.checkNow")}</button>
             <button disabled={!idle || unread === 0} onclick={() => markRead(null)}>
-              Segna tutti come letti
+              {t("board.markAllRead")}
             </button>
           {:else if tab === "deadlines"}
-            <button disabled={!idle} onclick={loadDeadlines}>Aggiorna</button>
+            <button disabled={!idle} onclick={loadDeadlines}>{t("deadlines.refresh")}</button>
           {/if}
         </div>
       </header>
@@ -384,17 +413,17 @@
           {#each suggestions as s (s.courseId)}
             <section class="card suggestion">
               <p>
-                Sembra che tu abbia superato <strong>{s.name}</strong>: il corso d'ufficio non è più
-                tra le tue iscrizioni, mentre resta quello a cui ti eri iscritto tu. Segnarlo come
-                superato?
+                {t("courses.suggestion.before")}
+                <strong>{s.name}</strong>{t("courses.suggestion.after")}
               </p>
               <div class="buttons">
                 <button
                   class="primary"
                   disabled={!idle}
-                  onclick={() => setState(s.teachingKey, "passed")}>Sì, l'ho superato</button
+                  onclick={() => setState(s.teachingKey, "passed")}
+                  >{t("courses.suggestion.yes")}</button
                 >
-                <button disabled={!idle} onclick={() => dismiss(s)}>No</button>
+                <button disabled={!idle} onclick={() => dismiss(s)}>{t("common.no")}</button>
               </div>
             </section>
           {/each}
@@ -409,8 +438,8 @@
           {#if summaries}
             <section class="card">
               <div class="card-head">
-                <h2>Ultima sincronizzazione</h2>
-                <button class="link" onclick={() => (summaries = null)}>Chiudi</button>
+                <h2>{t("sync.lastSync")}</h2>
+                <button class="link" onclick={() => (summaries = null)}>{t("common.close")}</button>
               </div>
               <SyncSummary {summaries} />
             </section>
@@ -427,7 +456,7 @@
               onplan={openPlan}
             />
           {:else}
-            <p class="muted">Corsi non ancora caricati.</p>
+            <p class="muted">{t("courses.notLoaded")}</p>
           {/if}
         {:else if tab === "links"}
           <Links
@@ -452,28 +481,30 @@
         {:else if tab === "settings"}
           <div class="settings">
             <section class="card">
-              <h2>Account</h2>
-              <p>Accesso effettuato come <strong>{session.fullname}</strong>.</p>
-              <button onclick={logout} disabled={!idle}>Esci</button>
+              <h2>{t("settings.account")}</h2>
+              <p>{t("settings.loggedInAs")} <strong>{session.fullname}</strong>.</p>
+              <button onclick={logout} disabled={!idle}>{t("settings.logout")}</button>
             </section>
             <section class="card">
-              <h2>Cartella di destinazione</h2>
+              <h2>{t("settings.folder")}</h2>
               <p>
-                {#if root}<code>{root}</code>{:else}Scegli dove salvare il materiale dei corsi.{/if}
+                {#if root}<code>{root}</code>{:else}{t("settings.folderPrompt")}{/if}
               </p>
-              <p class="muted">
-                Puoi scegliere la cartella usata da WeBeep Sync v1: i file già presenti e identici
-                (stessa dimensione e data) non vengono riscaricati e i file che hai modificato non
-                vengono mai sovrascritti. La cartella di ogni corso si cambia dalla scheda Corsi.
-              </p>
+              <p class="muted">{t("settings.folderHint")}</p>
               <button onclick={chooseRoot} disabled={!idle}>
-                {root ? "Cambia cartella…" : "Scegli cartella…"}
+                {root ? t("common.changeFolder") : t("common.chooseFolder")}
               </button>
             </section>
             {#if settings}
               <section class="card">
-                <h2>Sincronizzazione e notifiche</h2>
-                <SettingsPanel {settings} disabled={!idle} onchange={saveSettings} />
+                <h2>{t("settings.syncAndNotifications")}</h2>
+                <SettingsPanel
+                  {settings}
+                  disabled={!idle}
+                  onchange={saveSettings}
+                  language={lang()}
+                  onlanguage={changeLanguage}
+                />
               </section>
             {/if}
             {#if import.meta.env.DEV}
@@ -487,12 +518,12 @@
       <footer class="status">
         {#if error}
           <p class="error" role="alert">{error}</p>
-          <button class="link" onclick={() => (error = null)}>Chiudi</button>
+          <button class="link" onclick={() => (error = null)}>{t("common.close")}</button>
         {:else if busy}
-          <p class="muted" role="status">{busy}</p>
+          <p class="muted" role="status">{t(busy)}</p>
         {:else if notice}
           <p class="notice" role="status">{notice}</p>
-          <button class="link" onclick={() => (notice = null)}>Chiudi</button>
+          <button class="link" onclick={() => (notice = null)}>{t("common.close")}</button>
         {/if}
       </footer>
     </main>
@@ -525,18 +556,27 @@
     <div class="welcome-box">
       <img src="/logo.svg" alt="" width="72" height="72" />
       <h1>WeBeep Sync</h1>
-      <p class="muted">Scarica e tiene aggiornato il materiale dei tuoi corsi di WeBeep.</p>
+      <p class="muted">{t("welcome.tagline")}</p>
       {#if session}
         <Onboarding loggedIn={false} hasRoot={!!root} hasSynced={!!lastSync} />
-        <button class="primary big" onclick={login} disabled={!idle}>Accedi a WeBeep</button>
+        <button class="primary big" onclick={login} disabled={!idle}>{t("welcome.login")}</button>
       {/if}
       {#if busy}
-        <p class="muted" role="status">{busy}</p>
+        <p class="muted" role="status">{t(busy)}</p>
       {/if}
       {#if error}
         <p class="error" role="alert">{error}</p>
       {/if}
-      <p class="muted small">Progetto non ufficiale, non affiliato al Politecnico di Milano.</p>
+      <p class="languages">
+        <button class="link" class:current={lang() === "it"} onclick={() => changeLanguage("it")}
+          >Italiano</button
+        >
+        ·
+        <button class="link" class:current={lang() === "en"} onclick={() => changeLanguage("en")}
+          >English</button
+        >
+      </p>
+      <p class="muted small">{t("common.unofficial")}</p>
     </div>
   </div>
 {/if}
@@ -674,6 +714,16 @@
   .welcome-box :global(.card) {
     margin-top: 20px;
     text-align: left;
+  }
+
+  .languages {
+    margin-top: 20px;
+    color: var(--muted);
+  }
+
+  .languages .current {
+    font-weight: 700;
+    text-decoration: underline;
   }
 
   button.big {

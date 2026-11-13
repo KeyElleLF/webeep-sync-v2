@@ -1,72 +1,92 @@
 <script lang="ts">
   import type { Deadline } from "$lib/api";
+  import { locale, t, type MessageKey } from "$lib/i18n/index.svelte";
   import { openExternal } from "$lib/links";
 
   interface Props {
     deadlines: Deadline[] | null;
   }
 
+  type Group = "today" | "tomorrow" | "week" | "later";
+
   let { deadlines }: Props = $props();
-  const TIME = new Intl.DateTimeFormat("it-IT", {
-    weekday: "short",
-    day: "numeric",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-  const KINDS: Record<string, string> = {
-    assign: "Consegna",
-    quiz: "Quiz",
-    forum: "Forum",
-    workshop: "Workshop",
-    lesson: "Lezione",
+  const TIME = $derived(
+    new Intl.DateTimeFormat(locale(), {
+      weekday: "short",
+      day: "numeric",
+      month: "short",
+      hour: "2-digit",
+      minute: "2-digit",
+    }),
+  );
+  const KINDS: Record<string, MessageKey> = {
+    assign: "deadlines.kind.assign",
+    quiz: "deadlines.kind.quiz",
+    forum: "deadlines.kind.forum",
+    workshop: "deadlines.kind.workshop",
+    lesson: "deadlines.kind.lesson",
+  };
+  /** Groups in display order, with their titles. */
+  const GROUP_TITLES: Record<Group, MessageKey> = {
+    today: "deadlines.group.today",
+    tomorrow: "deadlines.group.tomorrow",
+    week: "deadlines.group.week",
+    later: "deadlines.group.later",
   };
   const DAY = 86_400_000;
 
-  function group(due: number): string {
+  function group(due: number): Group {
     const now = new Date();
     const start = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
     const at = due * 1000;
-    if (at < start + DAY) return "Oggi";
-    if (at < start + 2 * DAY) return "Domani";
-    if (at < start + 7 * DAY) return "Questa settimana";
-    return "Più avanti";
+    if (at < start + DAY) return "today";
+    if (at < start + 2 * DAY) return "tomorrow";
+    if (at < start + 7 * DAY) return "week";
+    return "later";
+  }
+
+  /** Activity types WeBeep may add later are shown as they come. */
+  function kindLabel(kind: string): string {
+    const key = KINDS[kind];
+    return key ? t(key) : kind;
   }
 
   const groups = $derived(
-    ["Oggi", "Domani", "Questa settimana", "Più avanti"]
-      .map((title) => ({ title, items: (deadlines ?? []).filter((d) => group(d.due) === title) }))
+    (Object.keys(GROUP_TITLES) as Group[])
+      .map((id) => ({ id, items: (deadlines ?? []).filter((d) => group(d.due) === id) }))
       .filter((g) => g.items.length > 0),
   );
 </script>
 
-<p class="hint">Consegne e quiz dei prossimi 14 giorni. Ricevi un promemoria 24 ore prima.</p>
+<p class="hint">{t("deadlines.hint")}</p>
 
 {#if deadlines === null}
-  <p class="muted">Scadenze non ancora caricate.</p>
+  <p class="muted">{t("deadlines.notLoaded")}</p>
 {:else if deadlines.length === 0}
-  <p class="muted">Nessuna scadenza nei prossimi 14 giorni.</p>
+  <p class="muted">{t("deadlines.empty")}</p>
 {:else}
   <div class="table">
     <div class="row head" aria-hidden="true">
-      <span>Scadenza</span>
-      <span>Attività</span>
-      <span>Tipo</span>
-      <span>Corso</span>
+      <span>{t("deadlines.col.due")}</span>
+      <span>{t("deadlines.col.activity")}</span>
+      <span>{t("deadlines.col.kind")}</span>
+      <span>{t("common.course")}</span>
       <span></span>
     </div>
-    {#each groups as g (g.title)}
-      <h3>{g.title}</h3>
+    {#each groups as g (g.id)}
+      <h3>{t(GROUP_TITLES[g.id])}</h3>
       <ul>
         {#each g.items as d (d.id)}
           <li class="row" class:overdue={d.overdue}>
             <span class="when">{TIME.format(new Date(d.due * 1000))}</span>
             <span class="name ellipsis" title={d.name}>{d.name}</span>
-            <span class="meta">{KINDS[d.kind] ?? d.kind}</span>
+            <span class="meta">{kindLabel(d.kind)}</span>
             <span class="meta ellipsis" title={d.courseName}>{d.courseName}</span>
             <span class="open">
               {#if d.url}
-                <button class="link" onclick={() => openExternal(d.url)}>Apri su WeBeep</button>
+                <button class="link" onclick={() => openExternal(d.url)}
+                  >{t("common.openOnWebeep")}</button
+                >
               {/if}
             </span>
           </li>

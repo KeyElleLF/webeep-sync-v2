@@ -1,10 +1,10 @@
-// Italian labels and formatting shared by the components.
+// Labels and formatting shared by the components, in the language of the interface.
 import type { CourseState, SemesterGuess } from "$lib/api";
+import { locale, t, type MessageKey } from "$lib/i18n/index.svelte";
 
-const BYTES = new Intl.NumberFormat("it-IT", { maximumFractionDigits: 1 });
 const UNITS = ["B", "KB", "MB", "GB", "TB"];
 
-/** 1363148 → "1,3 MB" */
+/** 1363148 → "1,3 MB" (or "1.3 MB" in English) */
 export function formatBytes(bytes: number): string {
   let value = bytes;
   let unit = 0;
@@ -12,25 +12,29 @@ export function formatBytes(bytes: number): string {
     value /= 1024;
     unit += 1;
   }
-  return `${BYTES.format(value)} ${UNITS[unit]}`;
+  const number = new Intl.NumberFormat(locale(), { maximumFractionDigits: 1 }).format(value);
+  return `${number} ${UNITS[unit]}`;
 }
 
-const SOURCES: Record<SemesterGuess["source"], string> = {
-  manual: "scelto da te",
-  studyPlan: "dal piano di studi",
-  fileDates: "dalle date dei file",
-  startDate: "dalla data di inizio del corso",
+const SOURCES: Record<SemesterGuess["source"], MessageKey> = {
+  manual: "courses.source.manual",
+  studyPlan: "courses.source.studyPlan",
+  fileDates: "courses.source.fileDates",
+  startDate: "courses.source.startDate",
 };
 
-/** "1°", "2°" or "?" when unknown. */
+/** "1°", "2°" ("1st", "2nd" in English) or "?" when unknown. */
 export function semesterNumber(guess: SemesterGuess | null): string {
   if (!guess) return "?";
-  return guess.semester === "first" ? "1°" : "2°";
+  return t(guess.semester === "first" ? "courses.semester1Short" : "courses.semester2Short");
 }
 
 export function semesterLabel(guess: SemesterGuess | null): string {
-  if (!guess) return "semestre non noto";
-  return `${semesterNumber(guess)} semestre (${SOURCES[guess.source]})`;
+  if (!guess) return t("courses.semesterUnknown");
+  return t("courses.semesterLabel", {
+    semester: semesterNumber(guess),
+    source: t(SOURCES[guess.source]),
+  });
 }
 
 /** Courses that are synced and shown in the board and in the links. */
@@ -40,9 +44,10 @@ export function isActive(state: CourseState): boolean {
   return ACTIVE_STATES.includes(state);
 }
 
+/** A group of the course list; `title` and `hint` are translated where they are shown. */
 export interface Section {
-  title: string;
-  hint: string;
+  title: MessageKey;
+  hint: MessageKey;
   states: CourseState[];
   /** Shown only when the user asks for all courses. */
   extra: boolean;
@@ -50,32 +55,32 @@ export interface Section {
 
 export const SECTIONS: Section[] = [
   {
-    title: "Questo semestre",
-    hint: "Sincronizzati di default.",
+    title: "courses.section.current.title",
+    hint: "courses.section.current.hint",
     states: ["current"],
     extra: false,
   },
   {
-    title: "Prossimo semestre",
-    hint: "Sincronizzati di default: il materiale arriva appena viene pubblicato.",
+    title: "courses.section.upcoming.title",
+    hint: "courses.section.upcoming.hint",
     states: ["upcoming"],
     extra: false,
   },
   {
-    title: "Esami in sospeso",
-    hint: "Corsi del semestre scorso: sincronizzati finché non li segni come superati.",
+    title: "courses.section.examPending.title",
+    hint: "courses.section.examPending.hint",
     states: ["examPending"],
     extra: false,
   },
   {
-    title: "Superati e ignorati",
-    hint: "Non sincronizzati.",
+    title: "courses.section.retired.title",
+    hint: "courses.section.notSynced",
     states: ["passed", "ignored"],
     extra: true,
   },
   {
-    title: "Anni precedenti",
-    hint: "Non sincronizzati.",
+    title: "courses.section.past.title",
+    hint: "courses.section.notSynced",
     states: ["past"],
     extra: true,
   },

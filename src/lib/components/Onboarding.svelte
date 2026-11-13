@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { t } from "$lib/i18n/index.svelte";
+
   interface Props {
     loggedIn: boolean;
     hasRoot: boolean;
@@ -8,23 +10,15 @@
   let { loggedIn, hasRoot, hasSynced }: Props = $props();
 
   const steps = $derived([
-    { text: "Accedi con il tuo account Polimi", done: loggedIn },
-    {
-      text: "Scegli la cartella dove salvare i corsi (anche quella di WeBeep Sync v1)",
-      done: hasRoot,
-    },
-    {
-      text:
-        "Controlla i corsi: quelli dell'anno in corso sono già selezionati, divisi per semestre. " +
-        "Togli quelli che non ti interessano",
-      done: hasRoot && hasSynced,
-    },
-    { text: "Premi «Sincronizza ora»", done: hasSynced },
+    { text: t("onboarding.login"), done: loggedIn },
+    { text: t("onboarding.folder"), done: hasRoot },
+    { text: t("onboarding.courses"), done: hasRoot && hasSynced },
+    { text: t("onboarding.sync", { button: t("sync.now") }), done: hasSynced },
   ]);
 </script>
 
 <section class="card">
-  <h2>Primo avvio</h2>
+  <h2>{t("onboarding.title")}</h2>
   <ol>
     {#each steps as step}
       <li class:done={step.done}>{step.text}{step.done ? " ✓" : ""}</li>

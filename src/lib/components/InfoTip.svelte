@@ -1,16 +1,25 @@
 <script lang="ts">
   // An "i" that shows an explanation on hover or keyboard focus.
+  import { t } from "$lib/i18n/index.svelte";
+
   interface Props {
     text: string;
+    /** Accessible name of the icon; a generic "Information" (translated) when missing. */
     label?: string;
   }
 
-  let { text, label = "Informazioni" }: Props = $props();
+  let { text, label }: Props = $props();
   const id = `tip-${Math.random().toString(36).slice(2, 9)}`;
 </script>
 
 <span class="wrap">
-  <span class="icon" tabindex="0" role="button" aria-label={label} aria-describedby={id}>i</span>
+  <span
+    class="icon"
+    tabindex="0"
+    role="button"
+    aria-label={label ?? t("common.info")}
+    aria-describedby={id}>i</span
+  >
   <span class="tip" role="tooltip" {id}>{text}</span>
 </span>
 

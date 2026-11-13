@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { CourseRow, ManualState } from "$lib/api";
   import { SECTIONS } from "$lib/format";
+  import { t, tn } from "$lib/i18n/index.svelte";
   import CourseItem from "./CourseItem.svelte";
   import InfoTip from "./InfoTip.svelte";
 
@@ -18,11 +19,6 @@
 
   let { courses, disabled, ontoggle, onrename, onstate, onsemester, planLoaded, onplan }: Props =
     $props();
-  const PLAN_INFO =
-    "Dal tuo piano degli studi l'app legge se ogni insegnamento è del 1° o del 2° semestre e " +
-    "divide i corsi in automatico. Va bene la ricevuta in PDF, la pagina «Piano degli studi» dei " +
-    "Servizi Online salvata in PDF (Ctrl+P) oppure la sua tabella copiata e incollata. Si " +
-    "tengono solo codici, nomi e semestri degli insegnamenti.";
   let showAll = $state(false);
 
   const groups = $derived(
@@ -49,37 +45,34 @@
 </script>
 
 <div class="bar">
-  <span><strong>{selectedCount}</strong> corsi sincronizzati</span>
+  <span><strong>{selectedCount}</strong> {tn("courses.selected", selectedCount)}</span>
   <span class="plan">
     <button class="small" {disabled} onclick={onplan}>
-      {planLoaded ? "Piano di studi ✓" : "Importa piano di studi"}
+      {planLoaded ? t("plan.loadedButton") : t("plan.importButton")}
     </button>
-    <InfoTip text={PLAN_INFO} label="Che cos'è il piano di studi" />
+    <InfoTip text={t("plan.info")} label={t("plan.infoLabel")} />
   </span>
   <label>
     <input type="checkbox" bind:checked={showAll} />
-    Mostra anche superati, ignorati e anni precedenti{#if hiddenCount > 0}&nbsp;({hiddenCount}){/if}
+    {t("courses.showAll")}{#if hiddenCount > 0}&nbsp;({hiddenCount}){/if}
   </label>
 </div>
-<p class="hint">
-  La selezione segue lo stato del corso; le tue scelte manuali hanno sempre la precedenza.
-  «Superato» e «Ignora» valgono per tutti i corsi dello stesso insegnamento.
-</p>
+<p class="hint">{t("courses.selectionHint")}</p>
 
 <div class="table">
   <div class="row head" aria-hidden="true">
     <span></span>
-    <span>Corso</span>
-    <span>Semestre</span>
-    <span>Cartella</span>
+    <span>{t("common.course")}</span>
+    <span>{t("courses.col.semester")}</span>
+    <span>{t("courses.col.folder")}</span>
     <span></span>
   </div>
 
   {#each visible as group (group.title)}
     <h3>
-      {group.title}
+      {t(group.title)}
       <span class="count">{group.courses.length}</span>
-      <span class="group-hint">{group.hint}</span>
+      <span class="group-hint">{t(group.hint)}</span>
     </h3>
     <ul>
       {#each group.courses as course (course.id)}

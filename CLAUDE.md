@@ -41,9 +41,19 @@ logica di sync e corsi.
 - **«Materiali» appiattita di default**, come la v1, per compatibilità con `Desktop\polimi`.
 - **Contenuti di WeBeep sempre in italiano** (verificato il 2026-11-13, vedi «Verifiche»): in
   inglese cambiano i nomi delle sezioni e di alcune cartelle, quindi i percorsi dei file. La lingua
-  dell'interfaccia (italiano/inglese, da fare) traduce solo i testi dell'app; i nomi standard del
-  modello Polimi (Materiali, Registrazioni, Consegne, Bacheca, Annunci, Archivio registrazioni)
-  si possono tradurre **solo in visualizzazione** con un piccolo dizionario.
+  dell'interfaccia traduce solo i testi dell'app; i nomi standard del modello Polimi (Materiali,
+  Registrazioni, Consegne, Bacheca, Annunci, Archivio registrazioni) sono tradotti **solo in
+  visualizzazione** (`displayName` in `src/lib/i18n/index.svelte.ts`).
+- **Interfaccia in italiano e inglese** (2026-11-13): impostazione `language` nel database
+  (comandi `get_language`/`set_language`; al primo avvio la lingua di Windows). Frontend:
+  `src/lib/i18n/` con `it.ts` (testo di riferimento) ed `en.ts` (stesse chiavi, controllate da
+  TypeScript), `t()`, `tn()` per singolare/plurale, `locale()` per date e numeri. Backend:
+  `src-tauri/src/i18n.rs`, lingua globale caricata all'avvio; i messaggi restano scritti in
+  italiano nel codice e la tabella `EN` dà l'inglese (con `{}` per le parti variabili), applicata a
+  tutti gli errori dei comandi (`CommandError`), agli errori dei singoli file e ai titoli delle
+  finestre; le notifiche usano `pick()`. **Quando si aggiunge un messaggio**: chiave in `it.ts` e
+  `en.ts`, oppure riga nella tabella `EN` (un test controlla che ogni riga si traduca). I nomi
+  delle copie di conflitto sul disco («WeBeep aggiornato») restano in italiano.
 - **Interfaccia sempre scura con accento viola** (2026-11-12), indipendente dal tema di Windows:
   palette in `src/lib/styles.css` (`--accent` viola chiaro per testo e link, `--accent-strong` per
   i pulsanti pieni con testo bianco, contrasto ≥ 5:1), `color-scheme: dark`, finestra con

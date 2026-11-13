@@ -12,6 +12,7 @@ use tracing::{info, warn};
 use crate::commands::shared::{fetch_courses, locked};
 use crate::commands::sync::{clients, notify_new_files, notify_new_links, run_sync};
 use crate::commands::{CommandError, CommandResult};
+use crate::i18n::{Language, pick};
 use crate::notify::announcements::{self, by_course};
 use crate::notify::deadlines::{self, Deadline, due_reminders};
 use crate::notify::html::preview;
@@ -135,9 +136,16 @@ pub async fn check_announcements(app: &AppHandle, now: i64) -> CommandResult<Vec
 }
 
 fn announcement_title(course: &str, count: usize) -> String {
+    let language = crate::i18n::current();
     match count {
-        1 => format!("{course}: nuovo avviso"),
-        n => format!("{course}: {n} nuovi avvisi"),
+        1 => format!(
+            "{course}: {}",
+            pick(language, "nuovo avviso", "new announcement")
+        ),
+        n => format!(
+            "{course}: {n} {}",
+            pick(language, "nuovi avvisi", "new announcements")
+        ),
     }
 }
 
@@ -168,10 +176,15 @@ async fn remind_deadlines(app: &AppHandle, now: i64) -> CommandResult<()> {
 }
 
 fn deadline_title(deadline: &Deadline, now: i64) -> String {
-    match ((deadline.due - now) / 3_600).max(1) {
-        1 => format!("Tra meno di 2 ore: {}", deadline.name),
-        hours => format!("Tra {hours} ore: {}", deadline.name),
-    }
+    let language = crate::i18n::current();
+    let when = match ((deadline.due - now) / 3_600).max(1) {
+        1 => pick(language, "Tra meno di 2 ore", "In less than 2 hours").to_owned(),
+        hours => match language {
+            Language::Italian => format!("Tra {hours} ore"),
+            Language::English => format!("In {hours} hours"),
+        },
+    };
+    format!("{when}: {}", deadline.name)
 }
 
 /// Shows a system notification, if the user wants them.

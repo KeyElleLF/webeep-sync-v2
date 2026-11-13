@@ -115,7 +115,7 @@ pub fn execute_cleanup(
             }
             Err(message) => report.skipped.push(FileError {
                 path: file.path.clone(),
-                message,
+                message: crate::i18n::localize(&message),
             }),
         }
     }

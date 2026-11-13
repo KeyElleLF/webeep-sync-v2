@@ -8,6 +8,7 @@
 
 <script lang="ts" generics="T extends string">
   import type { SyncProgress } from "$lib/api";
+  import { locale, t, tn } from "$lib/i18n/index.svelte";
 
   interface Props {
     items: NavItem<T>[];
@@ -23,7 +24,9 @@
 
   let { items, current, fullname, lastSync, progress, syncing, canSync, onopen, onsync }: Props =
     $props();
-  const DATE = new Intl.DateTimeFormat("it-IT", { dateStyle: "medium", timeStyle: "short" });
+  const DATE = $derived(
+    new Intl.DateTimeFormat(locale(), { dateStyle: "medium", timeStyle: "short" }),
+  );
   const percent = $derived(progress ? Math.round((progress.index / progress.total) * 100) : 0);
 </script>
 
@@ -33,7 +36,7 @@
     <span>WeBeep Sync</span>
   </div>
 
-  <nav aria-label="Sezioni">
+  <nav aria-label={t("nav.label")}>
     {#each items as item (item.id)}
       <button
         class="nav-item"
@@ -43,7 +46,7 @@
       >
         <span>{item.label}</span>
         {#if item.badge}
-          <span class="badge" aria-label="{item.badge} non letti">{item.badge}</span>
+          <span class="badge" aria-label={tn("nav.unread", item.badge)}>{item.badge}</span>
         {/if}
       </button>
     {/each}
@@ -51,18 +54,18 @@
 
   <div class="sync">
     <button class="primary" disabled={!canSync} onclick={onsync}>
-      {syncing ? "Sincronizzazione…" : "Sincronizza ora"}
+      {syncing ? t("sync.running") : t("sync.now")}
     </button>
     {#if progress}
       <div class="bar" role="progressbar" aria-valuenow={percent} aria-valuemin={0} aria-valuemax={100}>
         <div style="width: {percent}%"></div>
       </div>
-      <p class="small">Corso {progress.index + 1} di {progress.total}</p>
+      <p class="small">{t("sync.progress", { index: progress.index + 1, total: progress.total })}</p>
       <p class="small ellipsis" title={progress.name}>{progress.name}</p>
     {:else if lastSync}
-      <p class="small">Ultimo sync: {DATE.format(new Date(lastSync * 1000))}</p>
+      <p class="small">{t("sync.last", { date: DATE.format(new Date(lastSync * 1000)) })}</p>
     {:else}
-      <p class="small">Nessun sync ancora</p>
+      <p class="small">{t("sync.never")}</p>
     {/if}
   </div>
 
@@ -70,7 +73,7 @@
     {#if fullname}
       <p class="ellipsis" title={fullname}>{fullname}</p>
     {/if}
-    <p class="small">Progetto non ufficiale, non affiliato al Politecnico di Milano.</p>
+    <p class="small">{t("common.unofficial")}</p>
   </footer>
 </aside>
 

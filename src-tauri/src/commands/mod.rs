@@ -20,18 +20,17 @@ pub struct CommandError {
 }
 
 impl CommandError {
+    /// `message` is written in Italian and shown in the language of the interface.
     pub fn new(message: impl Into<String>) -> Self {
         Self {
-            message: message.into(),
+            message: crate::i18n::localize(&message.into()),
         }
     }
 }
 
 impl<E: std::error::Error> From<E> for CommandError {
     fn from(err: E) -> Self {
-        Self {
-            message: err.to_string(),
-        }
+        Self::new(err.to_string())
     }
 }
 

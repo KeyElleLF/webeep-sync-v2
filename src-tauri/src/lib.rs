@@ -3,6 +3,7 @@ mod background;
 mod commands;
 mod courses;
 mod diagnostics;
+mod i18n;
 mod logging;
 mod moodle;
 mod notify;
@@ -23,7 +24,9 @@ fn setup(app: &mut App) -> Result<(), Box<dyn std::error::Error>> {
     }
     app.manage(logging::init(log_dir.as_deref()));
     tracing::info!("WeBeep Sync {} started", env!("CARGO_PKG_VERSION"));
-    app.manage(state::AppState::open(app.handle())?);
+    let state = state::AppState::open(app.handle())?;
+    commands::settings::load_language(&state);
+    app.manage(state);
     // Periodic checks run only while the window is open: closing it quits the app.
     background::start(app.handle().clone());
     Ok(())
@@ -53,6 +56,8 @@ pub fn run() {
             commands::settings::get_settings,
             commands::settings::last_sync,
             commands::settings::set_settings,
+            commands::settings::get_language,
+            commands::settings::set_language,
             commands::sync::sync_now,
             commands::teaching::set_teaching_state,
             commands::teaching::set_teaching_semester,

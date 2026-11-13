@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { Announcement, CourseRow } from "$lib/api";
   import { formatBytes } from "$lib/format";
+  import { locale, t } from "$lib/i18n/index.svelte";
   import { discussionUrl, interceptLinks, openExternal } from "$lib/links";
 
   interface Props {
@@ -18,19 +19,19 @@
   let selectedId = $state<number | null>(null);
   let list = $state<HTMLUListElement>();
 
-  const FULL = new Intl.DateTimeFormat("it-IT", { dateStyle: "full", timeStyle: "short" });
-  const TIME = new Intl.DateTimeFormat("it-IT", { hour: "2-digit", minute: "2-digit" });
-  const DAY = new Intl.DateTimeFormat("it-IT", { day: "numeric", month: "short" });
-  const DAY_YEAR = new Intl.DateTimeFormat("it-IT", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
+  const FULL = $derived(
+    new Intl.DateTimeFormat(locale(), { dateStyle: "full", timeStyle: "short" }),
+  );
+  const TIME = $derived(new Intl.DateTimeFormat(locale(), { hour: "2-digit", minute: "2-digit" }));
+  const DAY = $derived(new Intl.DateTimeFormat(locale(), { day: "numeric", month: "short" }));
+  const DAY_YEAR = $derived(
+    new Intl.DateTimeFormat(locale(), { day: "numeric", month: "short", year: "numeric" }),
+  );
 
   const names = $derived(new Map(courses.map((c) => [c.id, c.name])));
   const withPosts = $derived(
     [...new Set(announcements.map((a) => a.courseId))]
-      .map((id) => ({ id, name: names.get(id) ?? `Corso ${id}` }))
+      .map((id) => ({ id, name: names.get(id) ?? t("common.courseFallback", { id }) }))
       .sort((a, b) => a.name.localeCompare(b.name)),
   );
   const shown = $derived(
@@ -68,15 +69,18 @@
 </script>
 
 <div class="board">
-  <section class="list-pane" aria-label="Elenco degli avvisi">
+  <section class="list-pane" aria-label={t("board.listLabel")}>
     <div class="filters">
-      <select bind:value={courseFilter} aria-label="Corso">
-        <option value="all">Tutti i corsi</option>
+      <select bind:value={courseFilter} aria-label={t("common.course")}>
+        <option value="all">{t("board.allCourses")}</option>
         {#each withPosts as c (c.id)}
           <option value={c.id}>{c.name}</option>
         {/each}
       </select>
-      <label><input type="checkbox" bind:checked={unreadOnly} /> Solo non letti ({unread})</label>
+      <label>
+        <input type="checkbox" bind:checked={unreadOnly} />
+        {t("board.unreadOnly", { count: unread })}
+      </label>
       {#if courseFilter !== "all"}
         {@const id = courseFilter}
         <label>
@@ -86,18 +90,15 @@
             {disabled}
             onchange={(e) => onmute(id, e.currentTarget.checked)}
           />
-          Niente notifiche per questo corso
+          {t("board.mute")}
         </label>
       {/if}
     </div>
 
     {#if announcements.length === 0}
-      <p class="empty">
-        Nessun avviso salvato. L'app controlla gli avvisi dei corsi sincronizzati ogni 15 minuti;
-        puoi anche premere «Controlla ora».
-      </p>
+      <p class="empty">{t("board.empty", { button: t("board.checkNow") })}</p>
     {:else if shown.length === 0}
-      <p class="empty">Nessun avviso con questi filtri.</p>
+      <p class="empty">{t("board.noMatch")}</p>
     {/if}
 
     <ul bind:this={list}>
@@ -133,7 +134,7 @@
           )}
         </p>
         <button class="link" onclick={() => openExternal(discussionUrl(selected.id))}>
-          Apri su WeBeep
+          {t("common.openOnWebeep")}
         </button>
       </header>
       <!-- Sanitized by the backend (allow-list, no scripts); links open in the browser. -->
@@ -141,7 +142,7 @@
       <div class="message" onclick={interceptLinks}>{@html selected.message}</div>
       {#if selected.attachments.length > 0}
         <div class="attachments">
-          <p class="meta">Allegati (si scaricano dalla pagina dell'avviso su WeBeep):</p>
+          <p class="meta">{t("board.attachments")}</p>
           <ul>
             {#each selected.attachments as file (file.fileurl)}
               <li>{file.filename} ({formatBytes(file.filesize)})</li>
@@ -150,7 +151,7 @@
         </div>
       {/if}
     {:else if shown.length > 0}
-      <p class="placeholder">Seleziona un avviso dall'elenco.</p>
+      <p class="placeholder">{t("board.selectHint")}</p>
     {/if}
   </article>
 </div>

@@ -1,25 +1,41 @@
 <script lang="ts">
   import type { Settings } from "$lib/api";
+  import { t, type Lang, type MessageKey } from "$lib/i18n/index.svelte";
 
   interface Props {
     settings: Settings;
     disabled: boolean;
     onchange: (settings: Settings) => void;
+    language: Lang;
+    onlanguage: (lang: Lang) => void;
   }
 
-  let { settings, disabled, onchange }: Props = $props();
+  let { settings, disabled, onchange, language, onlanguage }: Props = $props();
   const CONCURRENCY_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8];
-  const INTERVALS = [
-    { minutes: 30, label: "ogni 30 minuti" },
-    { minutes: 60, label: "ogni ora" },
-    { minutes: 120, label: "ogni 2 ore (consigliato)" },
-    { minutes: 240, label: "ogni 4 ore" },
-    { minutes: 480, label: "ogni 8 ore" },
-    { minutes: 1440, label: "una volta al giorno" },
+  const INTERVALS: { minutes: number; label: MessageKey }[] = [
+    { minutes: 30, label: "settings.interval.30" },
+    { minutes: 60, label: "settings.interval.60" },
+    { minutes: 120, label: "settings.interval.120" },
+    { minutes: 240, label: "settings.interval.240" },
+    { minutes: 480, label: "settings.interval.480" },
+    { minutes: 1440, label: "settings.interval.1440" },
   ];
+  const RECOMMENDED_CONCURRENCY = 4;
 </script>
 
-<h3>Mentre l'app è aperta</h3>
+<label class="row">
+  <span>Lingua / Language</span>
+  <select
+    value={language}
+    {disabled}
+    onchange={(e) => onlanguage(e.currentTarget.value as Lang)}
+  >
+    <option value="it">Italiano</option>
+    <option value="en">English</option>
+  </select>
+</label>
+
+<h3>{t("settings.whileOpen")}</h3>
 <label class="row">
   <input
     type="checkbox"
@@ -27,15 +43,15 @@
     {disabled}
     onchange={(e) => onchange({ ...settings, autosync: e.currentTarget.checked })}
   />
-  <span>Sincronizza automaticamente</span>
+  <span>{t("settings.autosync")}</span>
   <select
     value={settings.autosyncMinutes}
     disabled={disabled || !settings.autosync}
-    aria-label="Intervallo"
+    aria-label={t("settings.interval")}
     onchange={(e) => onchange({ ...settings, autosyncMinutes: Number(e.currentTarget.value) })}
   >
     {#each INTERVALS as i (i.minutes)}
-      <option value={i.minutes}>{i.label}</option>
+      <option value={i.minutes}>{t(i.label)}</option>
     {/each}
   </select>
 </label>
@@ -46,28 +62,27 @@
     {disabled}
     onchange={(e) => onchange({ ...settings, notifications: e.currentTarget.checked })}
   />
-  <span>Notifiche di sistema (nuovi file, avvisi, scadenze tra 24 ore)</span>
+  <span>{t("settings.notifications")}</span>
 </label>
-<p class="muted">
-  L'app lavora solo mentre è aperta: all'apertura controlla subito gli avvisi e, se l'ultimo
-  sync è più vecchio dell'intervallo scelto, sincronizza. Chiudendo la finestra si chiude tutto.
-</p>
+<p class="muted">{t("settings.whileOpenHint")}</p>
 
-<h3>Download</h3>
+<h3>{t("settings.download")}</h3>
 
 <label class="row">
-  <span>File scaricati contemporaneamente</span>
+  <span>{t("settings.concurrency")}</span>
   <select
     value={settings.downloadConcurrency}
     {disabled}
     onchange={(e) => onchange({ ...settings, downloadConcurrency: Number(e.currentTarget.value) })}
   >
     {#each CONCURRENCY_OPTIONS as n}
-      <option value={n}>{n}{n === 4 ? " (consigliato)" : ""}</option>
+      <option value={n}
+        >{n === RECOMMENDED_CONCURRENCY ? t("settings.recommended", { value: n }) : n}</option
+      >
     {/each}
   </select>
 </label>
-<p class="muted">Valori alti non velocizzano molto e caricano di più WeBeep.</p>
+<p class="muted">{t("settings.concurrencyHint")}</p>
 
 <label class="row">
   <input
@@ -76,16 +91,13 @@
     {disabled}
     onchange={(e) => onchange({ ...settings, flattenMaterials: e.currentTarget.checked })}
   />
-  <span>Non creare la cartella «Materiali» (come WeBeep Sync v1)</span>
+  <span>{t("settings.flatten")}</span>
 </label>
-<p class="muted">
-  Se la cambi, al prossimo sync i file già scaricati vengono spostati nella nuova posizione
-  (quelli che hai modificato restano dove sono e ne viene scaricata una copia nuova).
-</p>
+<p class="muted">{t("settings.flattenHint")}</p>
 
-<h3>Corsi superati</h3>
+<h3>{t("common.passedCourses")}</h3>
 <label class="row">
-  <span>Quando segno un corso come superato</span>
+  <span>{t("settings.cleanupWhen")}</span>
   <select
     value={settings.cleanupPolicy}
     {disabled}
@@ -95,14 +107,12 @@
         cleanupPolicy: e.currentTarget.value as Settings["cleanupPolicy"],
       })}
   >
-    <option value="ask">chiedimi se eliminare i file</option>
-    <option value="always">sposta subito i file nel Cestino</option>
-    <option value="never">non eliminare mai i file</option>
+    <option value="ask">{t("settings.cleanup.ask")}</option>
+    <option value="always">{t("settings.cleanup.always")}</option>
+    <option value="never">{t("settings.cleanup.never")}</option>
   </select>
 </label>
-<p class="muted">
-  Vengono spostati nel Cestino solo i file scaricati dall'app e non modificati da te.
-</p>
+<p class="muted">{t("settings.cleanupHint")}</p>
 
 <style>
   h3 {

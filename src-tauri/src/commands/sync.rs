@@ -13,6 +13,7 @@ use super::shared::{LAST_SYNC_KEY, fetch_courses, locked, saved_root, today};
 use super::{CommandError, CommandResult};
 use crate::auth::{self, store as keyring};
 use crate::courses::{CourseInfo, assign_folders};
+use crate::i18n::Language;
 use crate::moodle::client::MoodleClient;
 use crate::moodle::error::MoodleError;
 use crate::notify::links::new_links_notice;
@@ -50,7 +51,7 @@ pub async fn run_sync(app: &AppHandle) -> CommandResult<Vec<CourseSummary>> {
     Ok(summaries)
 }
 
-/// Notification "12 nuovi file in 3 corsi", if anything arrived.
+/// Notification "12 file nuovi o aggiornati" with the course names, if anything arrived.
 pub fn notify_new_files(app: &AppHandle, summaries: &[CourseSummary]) {
     let courses: Vec<&CourseSummary> = summaries
         .iter()
@@ -64,7 +65,12 @@ pub fn notify_new_files(app: &AppHandle, summaries: &[CourseSummary]) {
         return;
     }
     let names: Vec<&str> = courses.iter().map(|s| s.name.as_str()).collect();
-    let title = format!("{files} file nuovi o aggiornati");
+    let title = match (crate::i18n::current(), files) {
+        (Language::Italian, 1) => "1 file nuovo o aggiornato".to_owned(),
+        (Language::Italian, n) => format!("{n} file nuovi o aggiornati"),
+        (Language::English, 1) => "1 new or updated file".to_owned(),
+        (Language::English, n) => format!("{n} new or updated files"),
+    };
     crate::background::notify(app, &title, &names.join(", "));
 }
 
@@ -75,7 +81,7 @@ pub fn notify_new_links(app: &AppHandle, summaries: &[CourseSummary]) {
         .ok()
         .and_then(|store| store.muted_courses().ok())
         .unwrap_or_default();
-    if let Some((title, body)) = new_links_notice(summaries, &muted) {
+    if let Some((title, body)) = new_links_notice(summaries, &muted, crate::i18n::current()) {
         crate::background::notify(app, &title, &body);
     }
 }

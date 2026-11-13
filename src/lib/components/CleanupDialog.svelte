@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { CleanupPreview } from "$lib/api";
   import { formatBytes } from "$lib/format";
+  import { t, tn } from "$lib/i18n/index.svelte";
 
   interface Props {
     previews: CleanupPreview[];
@@ -29,25 +30,24 @@
     aria-labelledby="cleanup-title"
     use:focusSafeButton
   >
-    <h2 id="cleanup-title">Corsi superati</h2>
+    <h2 id="cleanup-title">{t("common.passedCourses")}</h2>
     {#each previews as p (p.courseId)}
       <div class="course">
         {#if p.files + p.modified.length === 0}
-          <p>Hai superato <strong>{p.name}</strong>: non ci sono file scaricati da eliminare.</p>
+          <p>{t("cleanup.passed")} <strong>{p.name}</strong>: {t("cleanup.nothing")}</p>
           <div class="buttons">
-            <button {disabled} onclick={() => ondecline(p)}>Ok</button>
+            <button {disabled} onclick={() => ondecline(p)}>{t("common.ok")}</button>
           </div>
         {:else}
           <p>
-            Hai superato <strong>{p.name}</strong>. Vuoi spostare nel Cestino i
-            <strong>{p.files}</strong> file scaricati da WeBeep ({formatBytes(p.bytes)}), compresi
-            quelli già presenti dalla v1 e riconosciuti come identici? Puoi recuperarli dal Cestino. I
-            file che hai aggiunto tu nella cartella non vengono toccati.
+            {t("cleanup.passed")} <strong>{p.name}</strong>. {tn("cleanup.question.before", p.files)}
+            <strong>{p.files}</strong>
+            {tn("cleanup.question.after", p.files, { size: formatBytes(p.bytes) })}
           </p>
           {#if p.modified.length > 0}
             <label class="modified">
               <input type="checkbox" bind:checked={include[p.courseId]} />
-              Elimina anche i {p.modified.length} file che hai modificato
+              {tn("cleanup.includeModified", p.modified.length)}
             </label>
             <ul>
               {#each p.modified as file (file.path)}
@@ -57,14 +57,14 @@
           {/if}
           <div class="buttons">
             <button class="primary" {disabled} onclick={() => onconfirm(p, include[p.courseId] ?? false)}
-              >Sì, sposta nel Cestino</button
+              >{t("cleanup.confirm")}</button
             >
-            <button {disabled} onclick={() => ondecline(p)}>No, tienili</button>
+            <button {disabled} onclick={() => ondecline(p)}>{t("cleanup.keep")}</button>
           </div>
         {/if}
       </div>
     {/each}
-    <button class="later" {disabled} onclick={onlater}>Chiedimelo più tardi</button>
+    <button class="later" {disabled} onclick={onlater}>{t("cleanup.later")}</button>
   </div>
 </div>
 

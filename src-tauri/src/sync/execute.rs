@@ -381,7 +381,7 @@ fn action_path(action: &Action) -> &str {
 fn failed(path: &str, message: &str) -> Done {
     Done::Failed(FileError {
         path: path.to_owned(),
-        message: message.to_owned(),
+        message: crate::i18n::localize(message),
     })
 }
 

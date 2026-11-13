@@ -86,7 +86,9 @@ pub async fn choose_study_plan(
     let (tx, rx) = oneshot::channel();
     app.dialog()
         .file()
-        .set_title("Scegli la ricevuta del piano degli studi (PDF)")
+        .set_title(crate::i18n::localize(
+            "Scegli la ricevuta del piano degli studi (PDF)",
+        ))
         .add_filter("PDF", &["pdf"])
         .pick_file(move |picked| {
             let _ = tx.send(picked);

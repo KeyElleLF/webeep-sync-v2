@@ -9,6 +9,7 @@
   import { onMount } from "svelte";
   import { getCurrentWebview } from "@tauri-apps/api/webview";
   import type { PlanStatus } from "$lib/api";
+  import { locale, t, tn } from "$lib/i18n/index.svelte";
 
   interface Props {
     status: PlanStatus | null;
@@ -26,7 +27,7 @@
   let dragging = $state(false);
   let pasted = $state("");
   let dropError = $state<string | null>(null);
-  const DATE = new Intl.DateTimeFormat("it-IT", { dateStyle: "long" });
+  const DATE = $derived(new Intl.DateTimeFormat(locale(), { dateStyle: "long" }));
 
   // Files dragged onto the window arrive as paths from Tauri (the HTML drop event does not
   // fire in the app). They are accepted only while this dialog is open.
@@ -37,7 +38,7 @@
       if (payload.type !== "drop") return;
       dragging = false;
       const pdf = payload.paths.find((p) => p.toLowerCase().endsWith(".pdf"));
-      dropError = pdf ? null : "Trascina un file PDF.";
+      dropError = pdf ? null : t("plan.dropPdf");
       if (pdf && !busy) ondrop(pdf);
     });
     return () => void unlisten.then((stop) => stop());
@@ -58,46 +59,46 @@
 <div class="overlay">
   <div class="card dialog" role="dialog" aria-modal="true" aria-labelledby="plan-title">
     <header>
-      <h2 id="plan-title">Piano di studi</h2>
-      <button class="link" onclick={onclose} disabled={busy} use:focusClose>Chiudi</button>
+      <h2 id="plan-title">{t("plan.title")}</h2>
+      <button class="link" onclick={onclose} disabled={busy} use:focusClose
+        >{t("common.close")}</button
+      >
     </header>
 
-    <p>
-      Dal tuo piano degli studi l'app legge se ogni insegnamento è del 1° o del 2° semestre e divide
-      i corsi di conseguenza.
-    </p>
+    <p>{t("plan.intro")}</p>
 
     {#if status}
       <p class="loaded">
-        Piano caricato il {DATE.format(new Date(status.importedAt * 1000))}: {status.teachings}
-        insegnamenti, {status.first} del 1° semestre e {status.second} del 2°.
-        <button class="link" disabled={busy} onclick={onclear}>Rimuovi</button>
+        {tn("plan.loaded", status.teachings, {
+          date: DATE.format(new Date(status.importedAt * 1000)),
+          first: status.first,
+          second: status.second,
+        })}
+        <button class="link" disabled={busy} onclick={onclear}>{t("plan.remove")}</button>
       </p>
     {/if}
 
     <div class="drop" class:dragging aria-busy={busy}>
       {#if busy}
-        <p>Leggo il piano…</p>
+        <p>{t("plan.reading")}</p>
       {:else}
-        <p class="big">Trascina qui il PDF</p>
-        <p class="muted">
-          la ricevuta del piano degli studi, oppure la pagina «Piano degli studi» salvata in PDF
-        </p>
-        <button class="primary" onclick={onchoose}>Scegli file…</button>
+        <p class="big">{t("plan.dropHere")}</p>
+        <p class="muted">{t("plan.dropHint")}</p>
+        <button class="primary" onclick={onchoose}>{t("plan.chooseFile")}</button>
       {/if}
     </div>
 
     <div class="paste">
-      <label for="plan-paste">Oppure incolla la tabella degli insegnamenti</label>
+      <label for="plan-paste">{t("plan.pasteLabel")}</label>
       <textarea
         id="plan-paste"
         bind:value={pasted}
         rows="4"
         disabled={busy}
-        placeholder="Seleziona la tabella nella pagina «Piano degli studi», copiala (Ctrl+C) e incollala qui (Ctrl+V)"
+        placeholder={t("plan.pastePlaceholder")}
       ></textarea>
       <button disabled={busy || pasted.trim() === ""} onclick={() => onpaste(pasted)}>
-        Leggi la tabella
+        {t("plan.readTable")}
       </button>
     </div>
 
@@ -108,30 +109,18 @@
     {/if}
 
     <details class="how">
-      <summary>Non hai la ricevuta?</summary>
+      <summary>{t("plan.noReceipt")}</summary>
       <p>
-        Dai Servizi Online del Polimi non si può più scaricare. Apri invece
-        <strong>Carriera didattica → Piano degli studi</strong>, poi:
+        {t("plan.how.before")}
+        <strong>{t("plan.how.page")}</strong>{t("plan.how.after")}
       </p>
       <ul>
-        <li>
-          <strong>per incollare:</strong> seleziona con il mouse la tabella degli insegnamenti
-          (dall'intestazione all'ultima riga), copiala e incollala qui sopra: così l'app vede solo la
-          tabella;
-        </li>
-        <li>
-          <strong>per il PDF:</strong> Ctrl+P → «Salva come PDF». Per non includere i tuoi dati,
-          seleziona prima la tabella e nella finestra di stampa scegli «Solo selezione» (in «Altre
-          impostazioni»).
-        </li>
+        <li><strong>{t("plan.how.paste.label")}</strong> {t("plan.how.paste.text")}</li>
+        <li><strong>{t("plan.how.pdf.label")}</strong> {t("plan.how.pdf.text")}</li>
       </ul>
     </details>
 
-    <p class="note">
-      Si tengono solo codici, nomi e semestri degli insegnamenti: dati personali, docenti e voti non
-      vengono salvati, e il file non lascia il tuo PC. Le scelte del semestre fatte a mano vengono sostituite dal piano; puoi sempre
-      cambiarle di nuovo dalla lista dei corsi.
-    </p>
+    <p class="note">{t("plan.note")}</p>
   </div>
 </div>
 

@@ -1,40 +1,38 @@
 <script lang="ts">
   import { api, type DumpReport } from "$lib/api";
+  import { t, type MessageKey } from "$lib/i18n/index.svelte";
 
   interface Props {
     disabled: boolean;
-    run: <T>(label: string, action: () => Promise<T>) => Promise<T | undefined>;
+    run: <T>(label: MessageKey, action: () => Promise<T>) => Promise<T | undefined>;
   }
 
   let { disabled, run }: Props = $props();
   let report = $state<DumpReport | null>(null);
 
   async function dump(lang: "it" | "en") {
-    report = (await run("Scarico i dati da WeBeep…", () => api.dumpPhase0(lang))) ?? report;
+    report = (await run("dev.dumping", () => api.dumpPhase0(lang))) ?? report;
   }
 </script>
 
 <details class="card">
-  <summary>Strumenti di sviluppo · Fase 0</summary>
+  <summary>{t("dev.title")}</summary>
   <p class="muted">
-    Salva le risposte grezze di WeBeep (corsi, filtri, struttura dei corsi in corso) in
-    <code>fixtures/raw/</code>. Contengono dati personali: non vanno condivise.
+    {t("dev.rawHint.before")}
+    <code>fixtures/raw/</code>{t("dev.rawHint.after")}
   </p>
-  <p class="muted">
-    In inglese WeBeep traduce i nomi predefiniti e i testi scritti in più lingue: servono entrambi i
-    dump per confrontarli.
-  </p>
+  <p class="muted">{t("dev.langHint")}</p>
   <div class="buttons">
-    <button onclick={() => dump("it")} {disabled}>Esegui dump (italiano)</button>
-    <button onclick={() => dump("en")} {disabled}>Esegui dump (inglese)</button>
+    <button onclick={() => dump("it")} {disabled}>{t("dev.dumpIt")}</button>
+    <button onclick={() => dump("en")} {disabled}>{t("dev.dumpEn")}</button>
   </div>
 
   {#if report}
     <div class="report">
-      <p>Cartella: <code>{report.directory}</code></p>
-      <p>File salvati ({report.files.length}): {report.files.join(", ")}</p>
+      <p>{t("dev.folder")} <code>{report.directory}</code></p>
+      <p>{t("dev.files", { count: report.files.length, files: report.files.join(", ") })}</p>
       {#if report.errors.length > 0}
-        <p class="error">Errori ({report.errors.length}):</p>
+        <p class="error">{t("dev.errors", { count: report.errors.length })}</p>
         <ul>
           {#each report.errors as message}
             <li>{message}</li>

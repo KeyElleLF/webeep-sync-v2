@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { CourseSummary } from "$lib/api";
+  import { t, tn } from "$lib/i18n/index.svelte";
 
   interface Props {
     summaries: CourseSummary[];
@@ -20,24 +21,27 @@
   });
 
   function headline(s: CourseSummary): string {
-    if (s.error) return "non sincronizzato";
+    if (s.error) return t("common.notSynced");
     const r = s.report;
     const parts = [
-      r.downloaded.length && `${r.downloaded.length} nuovi`,
-      r.updated.length && `${r.updated.length} aggiornati`,
-      r.adopted && `${r.adopted} già presenti`,
-      r.conflicts.length && `${r.conflicts.length} conflitti`,
-      r.errors.length && `${r.errors.length} errori`,
+      r.downloaded.length && `${r.downloaded.length} ${tn("sync.new", r.downloaded.length)}`,
+      r.updated.length && `${r.updated.length} ${tn("sync.updated", r.updated.length)}`,
+      r.adopted && `${r.adopted} ${tn("sync.adopted", r.adopted)}`,
+      r.conflicts.length && `${r.conflicts.length} ${tn("sync.conflicts", r.conflicts.length)}`,
+      r.errors.length && `${r.errors.length} ${tn("sync.errors", r.errors.length)}`,
     ].filter(Boolean);
-    return parts.length > 0 ? parts.join(" · ") : "nessuna novità";
+    return parts.length > 0 ? parts.join(" · ") : t("sync.noChanges");
   }
 </script>
 
 <p>
-  <strong>{totals.downloaded}</strong> file nuovi, <strong>{totals.updated}</strong> aggiornati,
-  <strong>{totals.adopted}</strong> già presenti,
-  <strong class:warn={totals.conflicts > 0}>{totals.conflicts}</strong> conflitti,
-  <strong class:bad={totals.errors > 0}>{totals.errors}</strong> errori.
+  <strong>{totals.downloaded}</strong> {tn("sync.newFiles", totals.downloaded)},
+  <strong>{totals.updated}</strong> {tn("sync.updated", totals.updated)},
+  <strong>{totals.adopted}</strong> {tn("sync.adopted", totals.adopted)},
+  <strong class:warn={totals.conflicts > 0}>{totals.conflicts}</strong>
+  {tn("sync.conflicts", totals.conflicts)},
+  <strong class:bad={totals.errors > 0}>{totals.errors}</strong>
+  {tn("sync.errors", totals.errors)}.
 </p>
 
 {#each summaries as s (s.id)}
@@ -46,24 +50,21 @@
       <span class="name">{s.name}</span>
       <span class="meta">{headline(s)}</span>
     </summary>
-    <p class="meta">Cartella: {s.folder}</p>
+    <p class="meta">{t("sync.folder", { folder: s.folder })}</p>
     {#if s.error}
       <p class="bad">{s.error}</p>
     {/if}
-    {@render list("Nuovi", s.report.downloaded)}
-    {@render list("Aggiornati", s.report.updated)}
+    {@render list(t("sync.list.new"), s.report.downloaded)}
+    {@render list(t("sync.list.updated"), s.report.updated)}
+    {@render list(t("sync.list.conflicts"), s.report.conflicts)}
+    {@render list(t("sync.list.keptLocal"), s.report.keptLocal)}
+    {@render list(t("sync.list.removed"), s.report.removedRemotely)}
     {@render list(
-      "Conflitti: la versione nuova è stata salvata accanto alla tua, che non è stata toccata",
-      s.report.conflicts,
-    )}
-    {@render list("Modificati da te (non toccati)", s.report.keptLocal)}
-    {@render list("Rimossi da WeBeep (la tua copia resta)", s.report.removedRemotely)}
-    {@render list(
-      "Errori",
+      t("sync.list.errors"),
       s.report.errors.map((e) => `${e.path}: ${e.message}`),
     )}
     {@render list(
-      "Contenuti esterni (da aprire su WeBeep)",
+      t("sync.list.external"),
       s.externalLinks.map((l) => `${l.name} — ${l.url}`),
     )}
   </details>

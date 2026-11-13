@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { CourseRow, ManualState } from "$lib/api";
   import { isActive, semesterLabel, semesterNumber } from "$lib/format";
+  import { t, tn } from "$lib/i18n/index.svelte";
 
   interface Props {
     course: CourseRow;
@@ -24,8 +25,8 @@
   );
   // With a manual choice the automatic guess is not known, so it is not shown.
   const autoLabel = $derived.by(() => {
-    if (course.semester?.source === "manual") return "Automatico";
-    return course.semester ? `Automatico: ${semesterNumber(course.semester)}` : "Automatico: ?";
+    if (course.semester?.source === "manual") return t("courses.auto");
+    return t("courses.autoWith", { semester: semesterNumber(course.semester) });
   });
   const details = $derived(
     [course.teachers.join(", "), course.academicYear, course.section].filter(Boolean).join(" · "),
@@ -71,13 +72,13 @@
       <select
         value={manualSemester}
         {disabled}
-        aria-label="Semestre di {course.name}"
+        aria-label={t("courses.semesterOf", { name: course.name })}
         title={semesterLabel(course.semester)}
         onchange={(e) => pickSemester(e.currentTarget.value)}
       >
         <option value="">{autoLabel}</option>
-        <option value="1">1° semestre</option>
-        <option value="2">2° semestre</option>
+        <option value="1">{t("courses.semester1")}</option>
+        <option value="2">{t("courses.semester2")}</option>
       </select>
     {:else}
       <span class="meta">—</span>
@@ -86,33 +87,39 @@
 
   <span class="folder" class:editing>
     {#if !course.selected}
-      <span class="meta">non sincronizzato</span>
+      <span class="meta">{t("common.notSynced")}</span>
     {:else if editing}
       <input
         type="text"
         bind:value={draft}
-        aria-label="Nome della cartella"
+        aria-label={t("courses.folderName")}
         use:focus
         onkeydown={(e) => {
           if (e.key === "Enter") save();
           if (e.key === "Escape") editing = false;
         }}
       />
-      <button class="small" onclick={save} {disabled}>Salva</button>
-      <button class="small" onclick={() => (editing = false)}>Annulla</button>
+      <button class="small" onclick={save} {disabled}>{t("common.save")}</button>
+      <button class="small" onclick={() => (editing = false)}>{t("common.cancel")}</button>
     {:else}
       <span class="path ellipsis" title={course.folder}>{course.folder}</span>
-      <button class="link" {disabled} onclick={startEditing}>Cambia</button>
+      <button class="link" {disabled} onclick={startEditing}>{t("common.change")}</button>
     {/if}
   </span>
 
   <span class="actions" hidden={editing}>
     {#if course.state === "passed" || course.state === "ignored"}
-      <button class="link" {disabled} onclick={() => onstate(course, null)}>Ripristina</button>
+      <button class="link" {disabled} onclick={() => onstate(course, null)}
+        >{t("courses.restore")}</button
+      >
     {:else if !confirming}
-      <button class="link" {disabled} onclick={() => (confirming = true)}>Superato</button>
+      <button class="link" {disabled} onclick={() => (confirming = true)}
+        >{t("courses.passed")}</button
+      >
       {#if active}
-        <button class="link" {disabled} onclick={() => onstate(course, "ignored")}>Ignora</button>
+        <button class="link" {disabled} onclick={() => onstate(course, "ignored")}
+          >{t("courses.ignore")}</button
+        >
       {/if}
     {/if}
   </span>
@@ -120,8 +127,10 @@
   {#if confirming}
     <div class="confirm">
       <span>
-        Segnare <strong>{course.name}</strong> come superato{siblings > 0
-          ? ` (anche gli altri ${siblings} corsi dello stesso insegnamento)`
+        {t("courses.confirmPassed.before")}
+        <strong>{course.name}</strong>
+        {t("courses.confirmPassed.after")}{siblings > 0
+          ? ` ${tn("courses.confirmSiblings", siblings)}`
           : ""}?
       </span>
       <button
@@ -130,9 +139,9 @@
         onclick={() => {
           confirming = false;
           onstate(course, "passed");
-        }}>Sì</button
+        }}>{t("common.yes")}</button
       >
-      <button class="small" onclick={() => (confirming = false)}>No</button>
+      <button class="small" onclick={() => (confirming = false)}>{t("common.no")}</button>
     </div>
   {/if}
 </li>
