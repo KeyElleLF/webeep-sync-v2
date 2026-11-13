@@ -46,8 +46,10 @@ L'app lavora solo mentre la finestra è aperta: chiudendola si chiude tutto.
 Disinstallando l'app, i file scaricati restano dove sono. Le versioni per macOS e Linux non sono
 ancora disponibili.
 
-Per aggiornare, scarica il nuovo installer e avvialo sopra la versione installata: account,
-impostazioni e file restano.
+**Gli aggiornamenti sono automatici** (dalla versione 0.2.0): quando esce una versione nuova
+l'app mostra un avviso; «Aggiorna ora» la scarica, ne verifica la firma, la installa e riavvia.
+Account, impostazioni e file restano. Hai una versione precedente? Installa una volta a mano la
+0.2.0.
 
 ## Primo avvio
 

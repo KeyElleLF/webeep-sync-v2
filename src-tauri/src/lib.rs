@@ -42,6 +42,9 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_notification::init())
+        // Updates from the GitHub releases (signed; see plugins.updater in tauri.conf.json).
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_process::init())
         .setup(setup)
         .invoke_handler(tauri::generate_handler![
             commands::session::auth_status,

@@ -34,6 +34,20 @@ Build the Windows installer with `npm run build:installer` (not `npm run tauri b
 script keeps your home folder out of the binary). The installer ends up in
 `src-tauri/target/release/bundle/nsis/`.
 
+## Releasing a version
+
+```sh
+npm run release -- 0.2.1 "What changed, shown to users in the update notice"
+```
+
+The script sets the version in every manifest, commits, tags `v0.2.1` and pushes. The tag
+starts the **Release** workflow (`.github/workflows/release.yml`): it builds the Windows
+installer, signs the update with the private key stored in the repository secrets
+(`TAURI_SIGNING_PRIVATE_KEY`, `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`) and publishes a GitHub
+release with `latest.json`. Installed apps check that file and update themselves. The matching
+public key is in `src-tauri/tauri.conf.json` (`plugins.updater.pubkey`). If the private key is
+lost, installed apps cannot be updated any more: keep a backup of it.
+
 ## Rules of the codebase
 
 - **Test first** for the pure logic (`sync/`, `courses/`, `notify/`): write the failing test, then

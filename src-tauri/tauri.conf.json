@@ -29,7 +29,9 @@
   },
   "bundle": {
     "active": true,
-    "targets": ["nsis"],
+    "targets": [
+      "nsis"
+    ],
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
@@ -44,11 +46,26 @@
     "longDescription": "Scarica e tiene aggiornato il materiale dei corsi di WeBeep, con bacheca degli avvisi e scadenze. Progetto non ufficiale, non affiliato al Politecnico di Milano.",
     "licenseFile": "../LICENSE",
     "windows": {
-      "webviewInstallMode": { "type": "downloadBootstrapper" },
+      "webviewInstallMode": {
+        "type": "downloadBootstrapper"
+      },
       "nsis": {
         "installMode": "currentUser",
-        "languages": ["Italian"],
+        "languages": [
+          "Italian"
+        ],
         "installerIcon": "icons/icon.ico"
+      }
+    }
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "",
+      "endpoints": [
+        "https://github.com/KeyElleLF/webeep-sync-v2/releases/latest/download/latest.json"
+      ],
+      "windows": {
+        "installMode": "passive"
       }
     }
   }

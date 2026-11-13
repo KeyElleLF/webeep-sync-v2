@@ -46,8 +46,9 @@ The app works only while its window is open: closing it quits everything.
 Uninstalling the app leaves your downloaded files where they are. macOS and Linux builds are not
 available yet.
 
-To update, download the new installer and run it over the installed version: your account,
-settings and files stay.
+**Updates are automatic** (from version 0.2.0): when a new version is out the app shows a
+notice; "Update now" downloads it, checks its signature, installs it and restarts. Your account,
+settings and files stay. Coming from an older version? Install 0.2.0 once by hand.
 
 ## First run
 

@@ -177,6 +177,20 @@ logica di sync e corsi.
   cartella utente → `~`, token ed email oscurati. Niente invio diretto dall'app (servirebbe un
   token nell'exe). Le Issue funzionano solo quando il repository è pubblico.
 
+- **Aggiornamenti automatici e rilasci** (2026-11-13): `tauri-plugin-updater` +
+  `tauri-plugin-process`; endpoint `…/releases/latest/download/latest.json` del repository
+  pubblico, `installMode: passive`, chiave pubblica in `plugins.updater.pubkey` di
+  `tauri.conf.json`. L'app installata controlla all'avvio e ogni 6 ore (solo build di release:
+  `import.meta.env.PROD`), mostra un avviso con le note (`UpdateBanner`, `src/lib/updates.svelte.ts`);
+  Impostazioni → «Aggiornamenti» con versione e «Controlla aggiornamenti». Rilascio:
+  `npm run release -- X.Y.Z "note"` (`scripts/release.mjs`: versione nei 5 file, commit, tag
+  annotato con le note, push) → workflow `.github/workflows/release.yml` (tauri-action, Windows,
+  firma con i secrets `TAURI_SIGNING_PRIVATE_KEY`/`_PASSWORD`, `tauri.release.conf.json` attiva
+  `createUpdaterArtifacts` solo in CI, così `npm run build:installer` in locale non ha bisogno della
+  chiave). CI su ogni push: `.github/workflows/ci.yml` (check, build del frontend, fmt, clippy,
+  test). **La chiave privata la tiene solo l'utente** (file fuori dal repo + secrets di GitHub):
+  mai leggerla né copiarla. Le versioni ≤ 0.1.3 non hanno l'updater: la 0.2.0 va installata a mano.
+
 ### Limiti noti e idee rimaste aperte
 - Le cartelle OneDrive/SharePoint di Polimi non si possono scaricare dall'app (servono il login
   Microsoft del Politecnico e un'app registrata con il consenso dell'amministratore): la scheda Link

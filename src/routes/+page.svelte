@@ -40,6 +40,13 @@
   import Links from "$lib/components/Links.svelte";
   import DevTools from "$lib/components/DevTools.svelte";
   import SupportPanel from "$lib/components/SupportPanel.svelte";
+  import UpdateBanner from "$lib/components/UpdateBanner.svelte";
+  import {
+    RECHECK_MS,
+    availableUpdate,
+    checkForUpdate,
+    updateDismissed,
+  } from "$lib/updates.svelte";
   import Onboarding from "$lib/components/Onboarding.svelte";
   import SettingsPanel from "$lib/components/SettingsPanel.svelte";
   import StudyPlanDialog, { type Feedback } from "$lib/components/StudyPlanDialog.svelte";
@@ -84,6 +91,9 @@
   let planOpen = $state(false);
   let planFeedback = $state<Feedback | null>(null);
   let appInfo = $state<AppInfo | null>(null);
+  let checkingUpdate = $state(false);
+  let updateMessage = $state<string | null>(null);
+  const showUpdate = $derived(availableUpdate() !== null && !updateDismissed());
 
   const idle = $derived(busy === null);
   const unread = $derived(announcements.filter((a) => !a.read).length);
@@ -355,8 +365,31 @@
     if (next === "deadlines" && deadlines === null) void loadDeadlines();
   }
 
+  /** "Check for updates" in the settings. */
+  async function manualUpdateCheck() {
+    checkingUpdate = true;
+    updateMessage = null;
+    try {
+      const update = await checkForUpdate();
+      updateMessage = update
+        ? t("update.available", { version: update.version })
+        : t("update.upToDate");
+    } catch (err) {
+      updateMessage = t("update.failed", { error: err instanceof Error ? err.message : String(err) });
+    } finally {
+      checkingUpdate = false;
+    }
+  }
+
   onMount(() => {
     refresh();
+    // Only the installed app updates itself (a dev build would offer the release over itself).
+    let updateTimer: ReturnType<typeof setInterval> | undefined;
+    if (import.meta.env.PROD) {
+      const quietCheck = () => void checkForUpdate().catch(() => undefined);
+      quietCheck();
+      updateTimer = setInterval(quietCheck, RECHECK_MS);
+    }
     const stops = [
       listen<SyncProgress>(SYNC_PROGRESS_EVENT, (e) => (progress = e.payload)),
       // Automatic syncs (while the window is open) report here too.
@@ -368,7 +401,10 @@
         announcements = await api.listAnnouncements().catch(() => announcements);
       }),
     ];
-    return () => stops.forEach((p) => p.then((stop) => stop()));
+    return () => {
+      clearInterval(updateTimer);
+      stops.forEach((p) => p.then((stop) => stop()));
+    };
   });
 </script>
 
@@ -412,8 +448,9 @@
         </div>
       </header>
 
-      {#if suggestions.length > 0}
+      {#if suggestions.length > 0 || showUpdate}
         <div class="banners">
+          <UpdateBanner />
           {#each suggestions as s (s.courseId)}
             <section class="card suggestion">
               <p>
@@ -511,6 +548,16 @@
                 />
               </section>
             {/if}
+            <section class="card">
+              <h2>{t("update.title")}</h2>
+              <p>{t("update.current", { version: appInfo?.version ?? "?" })}</p>
+              <button disabled={checkingUpdate} onclick={manualUpdateCheck}>
+                {t("update.check")}
+              </button>
+              {#if updateMessage}
+                <p class="muted" role="status">{updateMessage}</p>
+              {/if}
+            </section>
             <section class="card">
               <h2>{t("support.title")}</h2>
               <SupportPanel info={appInfo} disabled={!idle} />

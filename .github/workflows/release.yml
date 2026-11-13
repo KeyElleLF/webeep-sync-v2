@@ -1,0 +1,57 @@
+name: Release
+
+# Pushing a tag `vX.Y.Z` (made by `npm run release X.Y.Z`) builds the Windows installer, signs the
+# update with the private key kept in the repository secrets, and publishes a GitHub release with
+# `latest.json`, which installed apps read to update themselves.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    name: Windows installer
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Release notes from the tag message
+        shell: bash
+        run: |
+          git fetch --tags --force
+          {
+            echo 'NOTES<<END_OF_NOTES'
+            git tag -l --format='%(contents)' "$GITHUB_REF_NAME"
+            echo 'END_OF_NOTES'
+          } >> "$GITHUB_ENV"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: WeBeep Sync ${{ github.ref_name }}
+          releaseBody: ${{ env.NOTES }}
+          releaseDraft: false
+          prerelease: false
+          includeUpdaterJson: true
+          # Updater artifacts (.sig files) only in CI, where the signing key is available.
+          args: --config src-tauri/tauri.release.conf.json
