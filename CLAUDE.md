@@ -39,6 +39,11 @@ logica di sync e corsi.
 - **Il materiale non va mai perso:** nessuna sovrascrittura dei file modificati, eliminazioni solo
   via Cestino e solo dei file scaricati dall'app (§6.5, §7).
 - **«Materiali» appiattita di default**, come la v1, per compatibilità con `Desktop\polimi`.
+- **Contenuti di WeBeep sempre in italiano** (verificato il 2026-11-13, vedi «Verifiche»): in
+  inglese cambiano i nomi delle sezioni e di alcune cartelle, quindi i percorsi dei file. La lingua
+  dell'interfaccia (italiano/inglese, da fare) traduce solo i testi dell'app; i nomi standard del
+  modello Polimi (Materiali, Registrazioni, Consegne, Bacheca, Annunci, Archivio registrazioni)
+  si possono tradurre **solo in visualizzazione** con un piccolo dizionario.
 - **Interfaccia sempre scura con accento viola** (2026-11-12), indipendente dal tema di Windows:
   palette in `src/lib/styles.css` (`--accent` viola chiaro per testo e link, `--accent-strong` per
   i pulsanti pieni con testo bianco, contrasto ≥ 5:1), `color-scheme: dark`, finestra con
@@ -821,6 +826,7 @@ Passare dal progetto avviato con `npm run tauri dev` a un'app installata e usata
 | Problema 2 ("solo i file singoli") su altri corsi | **✅ causa trovata: moduli `page`** | Dump esteso (17 corsi `inprogress`, 2026-11-09). La v1 scarta tutti i `page`, ma alcuni docenti ci caricano il materiale: **Data and Information Quality** ha **tutto** il materiale (21 file, 122 MB: slide e notebook) nella pagina "Course Material"; **Formal Languages and Compilers** ha 5 ZIP nella pagina "Tutoring Sessions". I file stanno in `contents` del modulo, accanto a `index.html` (da ignorare). Nessun corso usa `subsection` (§5.1 escluso per ora, ma il codice deve gestirle: Moodle 4.5). Le `label` contengono solo immagini decorative (`mod_label/intro/*.jpg`); nessun riepilogo di sezione ha link `pluginfile` |
 | Moduli `url` | **tutti esterni** | 32 URL, nessuno verso WeBeep: `aunicalogin.polimi.it` (16, registrazioni), `kaggle.com` (8), `polimi365-my.sharepoint.com` (3, OneDrive), `webex.com` (2), `remaplab.deib.polimi.it` (2), `github.com` (1). Vanno elencati come "contenuti esterni" |
 | Corsi senza materiale | **9 su 16** | Contengono solo i 2 forum e l'URL delle registrazioni: probabilmente corsi del 2° semestre non ancora iniziati. Possibile segnale per il semestre (§6.2) |
+| Cosa cambia con i contenuti in inglese (`moodlewssettinglang=en`) | **i nomi del modello Polimi e i default di Moodle** | Dump `…-it`/`…-en` del 2026-11-13, 16 corsi, 80 sezioni. **Sezioni:** Bacheca → Notice board, Materiali → Materials, Registrazioni → Recordings, Consegne → Assignments (testi multilingua del modello dei corsi Polimi), Introduzione → General e Nuova sezione → New section (nomi predefiniti di Moodle). **Moduli:** Annunci → Announcements (forum), Archivio registrazioni → Recordings archive (url), più pochi nomi scritti dai docenti in due lingue (un url, una `page`, un **`folder` Documenti → Documents**). **File:** nessun file vero cambia nome (cambiano solo i `filename` dei moduli `url`). **Corsi:** solo il corso del corso di studi (Ingegneria Informatica → Computer Science and Engineering). Cambiano anche le etichette delle scadenze (`action.name`, `formattedtime`…), che l'app non usa. **Conseguenza:** con i contenuti in inglese «Materiali» non verrebbe più appiattita e cartelle come Consegne, Introduzione e Documenti cambierebbero nome, spostando i file. Per questo l'app chiede a WeBeep **sempre l'italiano** (`ContentLanguage::Italian`, predefinito in `moodle/client.rs`), qualunque sia la lingua dell'interfaccia |
 
 ---
 
