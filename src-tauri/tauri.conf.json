@@ -60,7 +60,7 @@
   },
   "plugins": {
     "updater": {
-      "pubkey": "",
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDhFRTdCNjJCREQzRTg1OTUKUldTVmhUN2RLN2Juamx3WE1TeWNJSVpNVExyWFZDWHVtVGI3RnNlRTRaMC9NZGlOb0RlMHBia1cK",
       "endpoints": [
         "https://github.com/KeyElleLF/webeep-sync-v2/releases/latest/download/latest.json"
       ],
