@@ -165,6 +165,16 @@ logica di sync e corsi.
   insegnamenti su 20, stessi semestri della ricevuta. Fixture redatte (senza docenti, voti, date):
   `fixtures/study_plan/career_page_{pasted,pdf}.txt`. Immagini/OCR scartate dall'utente.
 
+- **Segnalazione dei bug** (2026-11-13): modulo di Issue `.github/ISSUE_TEMPLATE/bug_report.yml`
+  (bilingue; campi con id `what`, `steps`, `expected`, `error`, `version`, `os`, `diagnostics`,
+  precompilabili dall'URL). Nell'app: Impostazioni → «Problemi e segnalazioni» (`SupportPanel`)
+  con «Segnala un problema» e «Esporta diagnostica…» (anteprima, poi salvataggio in `.txt`), e
+  link «Segnala» accanto agli errori nella barra di stato (`bugReportUrl` in `src/lib/links.ts`,
+  `REPO_URL` da cambiare nei fork). La diagnostica (`diagnostics/report.rs`, comando in
+  `commands/support.rs`): versione, sistema, impostazioni, conteggi, ultime 1500 righe di log;
+  cartella utente → `~`, token ed email oscurati. Niente invio diretto dall'app (servirebbe un
+  token nell'exe). Le Issue funzionano solo quando il repository è pubblico.
+
 ### Limiti noti e idee rimaste aperte
 - Le cartelle OneDrive/SharePoint di Polimi non si possono scaricare dall'app (servono il login
   Microsoft del Politecnico e un'app registrata con il consenso dell'amministratore): la scheda Link

@@ -16,6 +16,7 @@
     type ManualState,
     type PassedSuggestion,
     type PlanStatus,
+    type AppInfo,
     type SessionInfo,
     type Settings,
     type StateOutcome,
@@ -31,13 +32,14 @@
     t,
     tn,
   } from "$lib/i18n/index.svelte";
-  import { openExternal } from "$lib/links";
+  import { bugReportUrl, openExternal } from "$lib/links";
   import Board from "$lib/components/Board.svelte";
   import CleanupDialog from "$lib/components/CleanupDialog.svelte";
   import CourseList from "$lib/components/CourseList.svelte";
   import Deadlines from "$lib/components/Deadlines.svelte";
   import Links from "$lib/components/Links.svelte";
   import DevTools from "$lib/components/DevTools.svelte";
+  import SupportPanel from "$lib/components/SupportPanel.svelte";
   import Onboarding from "$lib/components/Onboarding.svelte";
   import SettingsPanel from "$lib/components/SettingsPanel.svelte";
   import StudyPlanDialog, { type Feedback } from "$lib/components/StudyPlanDialog.svelte";
@@ -81,6 +83,7 @@
   let planStatus = $state<PlanStatus | null>(null);
   let planOpen = $state(false);
   let planFeedback = $state<Feedback | null>(null);
+  let appInfo = $state<AppInfo | null>(null);
 
   const idle = $derived(busy === null);
   const unread = $derived(announcements.filter((a) => !a.read).length);
@@ -130,6 +133,7 @@
 
   async function refresh() {
     await initLanguage();
+    appInfo = await api.appInfo().catch(() => null);
     session = (await run("status.checkingSession", api.authStatus)) ?? session;
     if (session?.loggedIn) await loadLibrary();
   }
@@ -507,6 +511,10 @@
                 />
               </section>
             {/if}
+            <section class="card">
+              <h2>{t("support.title")}</h2>
+              <SupportPanel info={appInfo} disabled={!idle} />
+            </section>
             {#if import.meta.env.DEV}
               <!-- Phase 0 dump: development only (the command also refuses in release builds). -->
               <DevTools disabled={!idle} {run} />
@@ -518,6 +526,13 @@
       <footer class="status">
         {#if error}
           <p class="error" role="alert">{error}</p>
+          {#if appInfo}
+            {@const info = appInfo}
+            {@const text = error}
+            <button class="link" onclick={() => openExternal(bugReportUrl(info, text))}>
+              {t("support.reportShort")}
+            </button>
+          {/if}
           <button class="link" onclick={() => (error = null)}>{t("common.close")}</button>
         {:else if busy}
           <p class="muted" role="status">{t(busy)}</p>

@@ -256,6 +256,22 @@ impl Store {
         Ok(())
     }
 
+    /// Version of the database schema (number of migrations applied).
+    pub fn schema_version(&self) -> Result<i64, StoreError> {
+        Ok(self
+            .conn
+            .pragma_query_value(None, "user_version", |row| row.get(0))?)
+    }
+
+    /// Files the app downloaded, and in how many courses (for the diagnostic file).
+    pub fn baseline_counts(&self) -> Result<(u64, u64), StoreError> {
+        Ok(self.conn.query_row(
+            "SELECT COUNT(*), COUNT(DISTINCT course_id) FROM baseline",
+            [],
+            |row| Ok((row.get(0)?, row.get(1)?)),
+        )?)
+    }
+
     pub fn setting(&self, key: &str) -> Result<Option<String>, StoreError> {
         Ok(self
             .conn
@@ -319,6 +335,26 @@ mod tests {
         assert_eq!(first.len(), 1);
         assert_eq!(first["1:/a.pdf"], entry("Materiali/a.pdf", 10));
         assert!(store.baseline(3).unwrap().is_empty());
+    }
+
+    #[test]
+    fn counts_and_schema_version_for_diagnostics() {
+        let mut store = Store::open_in_memory().unwrap();
+        assert_eq!(store.baseline_counts().unwrap(), (0, 0));
+        store
+            .save_baseline(
+                1,
+                &[
+                    ("a".to_owned(), entry("a.pdf", 1)),
+                    ("b".to_owned(), entry("b.pdf", 1)),
+                ],
+            )
+            .unwrap();
+        store
+            .save_baseline(2, &[("c".to_owned(), entry("c.pdf", 1))])
+            .unwrap();
+        assert_eq!(store.baseline_counts().unwrap(), (3, 2));
+        assert_eq!(store.schema_version().unwrap(), MIGRATIONS.len() as i64);
     }
 
     #[test]

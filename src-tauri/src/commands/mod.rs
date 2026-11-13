@@ -8,6 +8,7 @@ pub mod session;
 pub mod settings;
 pub mod shared;
 pub mod study_plan;
+pub mod support;
 pub mod sync;
 pub mod teaching;
 

@@ -295,6 +295,11 @@ const EN: &[(&str, &str)] = &[
         "Scegli la ricevuta del piano degli studi (PDF)",
         "Choose the study plan (PDF)",
     ),
+    ("Salva il file di diagnostica", "Save the diagnostics file"),
+    (
+        "impossibile salvare il file: {}",
+        "cannot save the file: {}",
+    ),
     // Development tools
     (
         "cartella dati dell'app non disponibile: {}",

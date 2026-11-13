@@ -325,4 +325,17 @@ export const it = {
   "dev.folder": "Cartella:",
   "dev.files": "File salvati ({count}): {files}",
   "dev.errors": "Errori ({count}):",
+
+  "support.title": "Problemi e segnalazioni",
+  "support.intro":
+    "Se qualcosa non funziona, segnalalo su GitHub: il modulo si apre nel browser con versione e " +
+    "sistema già compilati. Allega il file di diagnostica: aiuta a capire cosa è successo.",
+  "support.report": "Segnala un problema",
+  "support.reportShort": "Segnala",
+  "support.export": "Esporta diagnostica…",
+  "support.previewHint":
+    "Ecco cosa contiene il file: cartelle personali, token ed email sono già nascosti. " +
+    "Controllalo prima di allegarlo.",
+  "support.save": "Salva…",
+  "support.saved": "Salvato in {path}. Allegalo alla segnalazione su GitHub.",
 } as const;

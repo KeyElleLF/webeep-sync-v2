@@ -139,6 +139,13 @@ export interface CourseLink {
   seen: boolean;
 }
 
+/** Version and system, for pre-filled bug reports. */
+export interface AppInfo {
+  version: string;
+  os: string;
+  arch: string;
+}
+
 export interface SyncProgress {
   index: number;
   total: number;
@@ -220,6 +227,11 @@ export const api = {
   login: () => call<SessionInfo>("login"),
   logout: () => call<void>("logout"),
   /** Interface language saved in the backend, or null if never chosen (first run). */
+  appInfo: () => call<AppInfo>("app_info"),
+  /** The diagnostic text (personal folders, tokens and emails hidden), shown before saving. */
+  diagnosticsPreview: () => call<string>("diagnostics_preview"),
+  /** Saves the diagnostic file where the user chooses; null if cancelled. */
+  saveDiagnostics: () => call<string | null>("save_diagnostics"),
   getLanguage: () => call<"it" | "en" | null>("get_language"),
   setLanguage: (lang: "it" | "en") => call<void>("set_language", { lang }),
   /** Development only: raw WeBeep responses, with content in Italian or English. */

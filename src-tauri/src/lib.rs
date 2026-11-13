@@ -79,6 +79,9 @@ pub fn run() {
             commands::study_plan::import_study_plan_text,
             commands::study_plan::choose_study_plan,
             commands::study_plan::clear_study_plan,
+            commands::support::app_info,
+            commands::support::diagnostics_preview,
+            commands::support::save_diagnostics,
         ])
         .run(tauri::generate_context!());
     if let Err(err) = result {

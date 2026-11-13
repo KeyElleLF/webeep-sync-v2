@@ -1,0 +1,60 @@
+name: Bug report / Segnalazione di un problema
+description: Something does not work in WeBeep Sync / Qualcosa non funziona in WeBeep Sync
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting! You can write in English or Italian.
+        Grazie della segnalazione! Puoi scrivere in italiano o in inglese.
+
+        **Never paste passwords or tokens.** / **Non incollare mai password o token.**
+        The app usually opens this form for you, with version and system already filled in
+        (Settings → Report a problem). / Di solito è l'app ad aprire questo modulo, con versione e
+        sistema già compilati (Impostazioni → Segnala un problema).
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened? / Cosa è successo?
+      description: What you were doing and what went wrong. / Cosa stavi facendo e cosa è andato storto.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce / Come riprodurlo
+      placeholder: |
+        1. …
+        2. …
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect? / Cosa ti aspettavi?
+  - type: textarea
+    id: error
+    attributes:
+      label: Error message / Messaggio di errore
+      description: Filled in by the app when you report from an error. / Compilato dall'app se segnali da un errore.
+      render: text
+  - type: input
+    id: version
+    attributes:
+      label: App version / Versione dell'app
+      placeholder: "0.2.0"
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: System / Sistema
+      placeholder: "windows x86_64"
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Diagnostics file / File di diagnostica
+      description: |
+        In the app: Settings → Export diagnostics, then drag the file here. Read it first: personal
+        folders, tokens and emails are already hidden. / Nell'app: Impostazioni → Esporta
+        diagnostica, poi trascina qui il file. Leggilo prima: cartelle personali, token ed email
+        sono già nascosti.

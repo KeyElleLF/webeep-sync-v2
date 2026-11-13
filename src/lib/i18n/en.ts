@@ -327,4 +327,17 @@ export const en: Record<keyof typeof it, string> = {
   "dev.folder": "Folder:",
   "dev.files": "Saved files ({count}): {files}",
   "dev.errors": "Errors ({count}):",
+
+  "support.title": "Problems and reports",
+  "support.intro":
+    "If something does not work, report it on GitHub: the form opens in the browser with version " +
+    "and system already filled in. Attach the diagnostics file: it helps to understand what happened.",
+  "support.report": "Report a problem",
+  "support.reportShort": "Report",
+  "support.export": "Export diagnostics…",
+  "support.previewHint":
+    "This is what the file contains: personal folders, tokens and emails are already hidden. " +
+    "Check it before attaching it.",
+  "support.save": "Save…",
+  "support.saved": "Saved to {path}. Attach it to the report on GitHub.",
 };
