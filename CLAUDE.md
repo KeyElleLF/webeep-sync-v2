@@ -59,7 +59,10 @@ logica di sync e corsi.
 - **Interfaccia sempre scura con accento viola** (2026-11-12), indipendente dal tema di Windows:
   palette in `src/lib/styles.css` (`--accent` viola chiaro per testo e link, `--accent-strong` per
   i pulsanti pieni con testo bianco, contrasto ≥ 5:1), `color-scheme: dark`, finestra con
-  `"theme": "Dark"` e `backgroundColor` in `tauri.conf.json`. Niente tema chiaro.
+  `"theme": "Dark"` e `backgroundColor` in `tauri.conf.json`. Niente tema chiaro. **Sfondi grigio
+  scuro neutro, senza sfumatura viola** (richiesta dell'utente del 2026-11-13: `--bg` `#1e1e1e`,
+  riquadri `#262626`, barra laterale `#171717`, bordi `#363636`, testo neutro); il viola resta solo
+  negli accenti (pulsanti, badge, link, selezione).
 - La v1 e i dati dell'utente: cartella di sync della v1 in `CLAUDE.local.md`. La prima prova reale
   è stata fatta in una cartella nuova; l'adozione dei file della v1 è verificata solo offline
   (76 file su 76 hanno dimensione e mtime uguali a WeBeep).

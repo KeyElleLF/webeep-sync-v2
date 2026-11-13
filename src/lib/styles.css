@@ -1,12 +1,12 @@
 /* Base styles shared by every component. */
 :root {
-  /* Always dark, easy on the eyes: purple-tinted greys, never pure black or white. */
-  --bg: #17151e;
-  --card: #1f1c28;
-  --sidebar: #121018;
-  --text: #e6e3ee;
-  --muted: #a29eb2;
-  --border: #302b3d;
+  /* Always dark, easy on the eyes: neutral dark greys (no tint), never pure black or white. */
+  --bg: #1e1e1e;
+  --card: #262626;
+  --sidebar: #171717;
+  --text: #e6e6e6;
+  --muted: #a6a6a6;
+  --border: #363636;
   /* Light violet for text, links and outlines; deeper violet for filled buttons. */
   --accent: #b69cff;
   --accent-strong: #7c4ddb;
