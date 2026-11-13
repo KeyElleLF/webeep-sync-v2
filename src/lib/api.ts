@@ -219,7 +219,8 @@ export const api = {
   authStatus: () => call<SessionInfo>("auth_status"),
   login: () => call<SessionInfo>("login"),
   logout: () => call<void>("logout"),
-  dumpPhase0: () => call<DumpReport>("dump_phase0"),
+  /** Development only: raw WeBeep responses, with content in Italian or English. */
+  dumpPhase0: (lang: "it" | "en") => call<DumpReport>("dump_phase0", { lang }),
   listCourses: () => call<CourseListing>("list_courses"),
   setTeachingState: (teachingKey: string, teachingState: ManualState | null) =>
     call<StateOutcome>("set_teaching_state", { teachingKey, teachingState }),

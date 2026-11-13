@@ -40,10 +40,30 @@ pub fn array_param<T: ToString>(name: &str, values: &[T]) -> Vec<Param> {
         .collect()
 }
 
+/// Language Moodle uses for the strings it builds (default section names, texts written in
+/// several languages with the multilang filter). Folder names come from these strings, so the
+/// sync always uses Italian; other languages are for showing content (and for the dev dump).
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub enum ContentLanguage {
+    #[default]
+    Italian,
+    English,
+}
+
+impl ContentLanguage {
+    pub fn code(self) -> &'static str {
+        match self {
+            Self::Italian => "it",
+            Self::English => "en",
+        }
+    }
+}
+
 pub struct MoodleClient {
     http: reqwest::Client,
     endpoint: Url,
     token: WsToken,
+    language: ContentLanguage,
 }
 
 impl fmt::Debug for MoodleClient {
@@ -72,7 +92,17 @@ impl MoodleClient {
             http,
             endpoint,
             token,
+            language: ContentLanguage::default(),
         })
+    }
+
+    pub fn language(&self) -> ContentLanguage {
+        self.language
+    }
+
+    /// The same client asking Moodle for content in another language.
+    pub fn with_language(self, language: ContentLanguage) -> Self {
+        Self { language, ..self }
     }
 
     /// Calls `function` and returns the raw JSON, after checking for Moodle exceptions.
@@ -108,7 +138,7 @@ impl MoodleClient {
             param("wsfunction", function),
             param("moodlewsrestformat", "json"),
             param("moodlewssettingfilter", "true"),
-            param("moodlewssettinglang", "it"),
+            param("moodlewssettinglang", self.language.code()),
         ];
         standard.into_iter().chain(params.iter().cloned()).collect()
     }
@@ -193,6 +223,34 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(value, json!([{"id": 1}]));
+    }
+
+    #[tokio::test]
+    async fn content_is_italian_unless_another_language_is_chosen() {
+        let server = MockServer::start().await;
+        for lang in ["it", "en"] {
+            Mock::given(method("POST"))
+                .and(path("/webservice/rest/server.php"))
+                .and(body_string_contains(format!("moodlewssettinglang={lang}")))
+                .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "lang": lang })))
+                .expect(1)
+                .mount(&server)
+                .await;
+        }
+
+        let italian = client_for(&server).await;
+        let english = client_for(&server)
+            .await
+            .with_language(ContentLanguage::English);
+
+        assert_eq!(
+            italian.call_raw("f", &[]).await.unwrap(),
+            json!({ "lang": "it" })
+        );
+        assert_eq!(
+            english.call_raw("f", &[]).await.unwrap(),
+            json!({ "lang": "en" })
+        );
     }
 
     #[tokio::test]

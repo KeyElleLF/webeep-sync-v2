@@ -66,10 +66,11 @@ impl Dumper<'_> {
     }
 }
 
-/// Runs the Phase 0 dump into a new timestamped folder under `base_dir`.
+/// Runs the Phase 0 dump into a new folder under `base_dir` named after the time and the
+/// content language (`20261113-101500-en`), so dumps in two languages can be compared.
 pub async fn run(client: &MoodleClient, base_dir: &Path) -> Result<DumpReport, MoodleError> {
     let stamp = chrono::Local::now().format("%Y%m%d-%H%M%S").to_string();
-    let dir = base_dir.join(stamp);
+    let dir = base_dir.join(format!("{stamp}-{}", client.language().code()));
     tokio::fs::create_dir_all(&dir)
         .await
         .map_err(|e| MoodleError::Config(format!("cartella di dump non creabile: {e}")))?;
