@@ -1,0 +1,575 @@
+Codice ins. Descrizione Corso
+laurea PSPA Posins Periodo Stato
+esame Crediti Docenti
+DOCENTE Data
+esame Voto
+
+Anno
+corso
+2
+ AA
+2026/27
+ Codice ins.
+055812
+Programma
+dettagliato
+ Descrizione
+DIGITAL FORENSICS
+AND CYBERCRIME
+ Corso
+laurea
+INF
+ PSPA
+T2A Posins
+E Periodo
+2° Sem
+ Stato
+esame
+N
+ Crediti
+5.0 Docenti
+DOCENTE Data
+esame Voto
+
+Anno
+corso
+2
+ AA
+2026/27
+ Codice ins.
+090958
+Programma
+dettagliato
+ Descrizione
+COMPUTER GRAPHICS
+ Corso
+laurea
+INF
+ PSPA
+T2A Posins
+E Periodo
+2° Sem
+ Stato
+esame
+N
+ Crediti
+5.0 Docenti
+DOCENTE Data
+esame Voto
+
+Anno
+corso
+2
+ AA
+2026/27
+ Codice ins.
+052534
+Programma
+dettagliato
+ Descrizione
+RECOMMENDER
+SYSTEMS
+ Corso
+laurea
+INF
+ PSPA
+T2A Posins
+E Periodo
+1° Sem
+ Stato
+esame
+N
+ Crediti
+5.0
+ Docenti
+DOCENTE Data
+esame Voto
+
+Anno
+corso
+2
+ AA
+2026/27
+ Codice ins.
+056490
+Programma
+dettagliato
+ Descrizione
+DATA AND
+INFORMATION
+QUALITY
+ Corso
+laurea
+INF
+ PSPA
+T2A Posins
+E Periodo
+1° Sem
+ Stato
+esame
+N
+ Crediti
+5.0 Docenti
+DOCENTE Data
+esame Voto
+
+Anno
+corso
+2
+ AA
+2026/27
+ Codice ins.
+056890
+Programma
+dettagliato
+ Descrizione
+UNCERTAINTY IN
+ARTIFICIAL
+INTELLIGENCE
+ Corso
+laurea
+INF
+ PSPA
+T2A Posins
+E Periodo
+1° Sem
+ Stato
+esame
+N
+ Crediti
+5.0 Docenti
+DOCENTE Data
+esame Voto
+
+Anno
+corso
+2
+ AA
+2026/27
+ Codice ins.
+056892
+Programma
+dettagliato
+ Descrizione
+DATA MINING
+ Corso
+laurea
+INF
+ PSPA
+T2A Posins
+E Periodo
+1° Sem
+ Stato
+esame
+N
+ Crediti
+5.0 Docenti
+DOCENTE Data
+esame Voto
+
+Anno
+corso
+2
+ AA
+2026/27
+ Codice ins.
+063500
+Programma
+dettagliato
+ Descrizione
+WEB AND DATA
+SCIENCE
+ Corso
+laurea
+INF
+ PSPA
+T2A Posins
+E Periodo
+1° Sem
+ Stato
+esame
+N
+ Crediti
+5.0
+ Docenti
+DOCENTE Data
+esame Voto
+
+Anno
+corso
+2
+ AA
+2026/27
+ Codice ins.
+095903
+Programma
+dettagliato
+ Descrizione
+ADVANCED OPERATING
+SYSTEMS
+ Corso
+laurea
+INF
+ PSPA
+T2A Posins
+E Periodo
+1° Sem
+ Stato
+esame
+N
+ Crediti
+5.0
+ Docenti
+DOCENTE Data
+esame Voto
+12/11/26, 20:32 Carriera studente
+
+https://onlineservices.polimi.it/portale_carriera_studente/portale_carriera_studente/controller/Home.do?jaf_currentWFID=main&EV N_S HOW_HO… 1/2
+
+Carriera didattica v. 2.3.0 / 2.3.0 Area Servizi ICT
+
+Anno
+corso AA Codice ins. Descrizione Corso
+laurea PSPA Posins Periodo Stato
+esame Crediti Docenti
+DOCENTE Data
+esame Voto
+
+Anno
+corso
+1
+ AA
+2025/26
+ Codice ins.
+055633
+Programma
+dettagliato
+ Descrizione
+COMPUTER SECURITY -
+UIC 587
+ Corso
+laurea
+INF
+ PSPA
+T2A Posins
+E Periodo
+2° Sem
+ Stato
+esame
+N
+ Crediti
+5.0
+ Docenti
+DOCENTE Data
+esame Voto
+
+Anno
+corso
+1
+ AA
+2025/26
+ Codice ins.
+088949
+Programma
+dettagliato
+ Descrizione
+ADVANCED COMPUTER
+ARCHITECTURES
+ Corso
+laurea
+INF
+ PSPA
+T2A Posins
+E Periodo
+2° Sem
+ Stato
+esame
+N
+ Crediti
+5.0
+ Docenti
+DOCENTE Data
+esame Voto
+
+Anno
+corso
+1
+ AA
+2025/26
+ Codice ins.
+090037
+Programma
+dettagliato
+ Descrizione
+MODEL
+IDENTIFICATION AND
+DATA ANALYSIS - 1ST
+MODULE
+ Corso
+laurea
+INF
+ PSPA
+T2A Posins
+E Periodo
+2° Sem
+ Stato
+esame
+N
+ Crediti
+5.0 Docenti
+DOCENTE Data
+esame Voto
+
+Anno
+corso
+1
+ AA
+2025/26
+ Codice ins.
+090038
+Programma
+dettagliato
+ Descrizione
+MODEL
+IDENTIFICATION AND
+DATA ANALYSIS - 2ND
+MODULE
+ Corso
+laurea
+INF
+ PSPA
+T2A Posins
+E Periodo
+2° Sem
+ Stato
+esame
+N
+ Crediti
+5.0
+ Docenti
+DOCENTE Data
+esame Voto
+
+Anno
+corso
+1
+ AA
+2025/26
+ Codice ins.
+091023
+Programma
+dettagliato
+ Descrizione
+BUSINESS
+INFORMATION
+SYSTEMS 1
+ Corso
+laurea
+INF
+ PSPA
+T2A Posins
+E Periodo
+2° Sem
+ Stato
+esame
+N
+ Crediti
+5.0
+ Docenti
+DOCENTE Data
+esame Voto
+
+Anno
+corso
+1
+ AA
+2025/26
+ Codice ins.
+095898
+Programma
+dettagliato
+ Descrizione
+COMPUTING
+INFRASTRUCTURES
+ Corso
+laurea
+INF
+ PSPA
+T2A Posins
+E Periodo
+2° Sem
+ Stato
+esame
+N
+ Crediti
+5.0 Docenti
+DOCENTE Data
+esame Voto
+
+Anno
+corso
+1
+ AA
+2025/26
+ Codice ins.
+097683
+Programma
+dettagliato
+ Descrizione
+MACHINE LEARNING
+ Corso
+laurea
+INF
+ PSPA
+T2A Posins
+E Periodo
+2° Sem
+ Stato
+esame
+N
+ Crediti
+5.0
+ Docenti
+DOCENTE Data
+esame Voto
+
+Anno
+corso
+1
+ AA
+2025/26
+ Codice ins.
+052537
+Programma
+dettagliato
+ Descrizione
+TECHNOLOGIES FOR
+INFORMATION
+SYSTEMS
+ Corso
+laurea
+INF
+ PSPA
+T2A Posins
+E Periodo
+1° Sem
+ Stato
+esame
+N
+ Crediti
+5.0 Docenti
+DOCENTE Data
+esame Voto
+
+Anno
+corso
+1
+ AA
+2025/26 Codice ins.
+054443
+ Descrizione
+SOFTWARE
+ENGINEERING 2
+ Corso
+laurea
+INF
+ PSPA
+T2A Posins
+E Periodo
+1° Sem
+ Stato
+esame
+S
+ Crediti
+5.0
+ Docenti
+DOCENTE Data
+esame
+
+ Voto
+-
+
+Anno
+corso
+1
+ AA
+2025/26 Codice ins.
+088983
+ Descrizione
+FOUNDATIONS OF
+OPERATIONS
+RESEARCH
+ Corso
+laurea
+INF
+ PSPA
+T2A Posins
+E Periodo
+1° Sem
+ Stato
+esame
+S
+ Crediti
+5.0 Docenti
+DOCENTE Data
+esame
+
+ Voto
+-
+
+Anno
+corso
+1
+ AA
+2025/26
+ Codice ins.
+089182
+Programma
+dettagliato
+ Descrizione
+FORMAL LANGUAGES
+AND COMPILERS
+ Corso
+laurea
+INF
+ PSPA
+T2A Posins
+E Periodo
+1° Sem
+ Stato
+esame
+N
+ Crediti
+5.0
+ Docenti
+DOCENTE Data
+esame Voto
+
+Anno
+corso
+1
+ AA
+2025/26 Codice ins.
+089183 Descrizione
+DATA BASES 2
+ Corso
+laurea
+INF
+ PSPA
+T2A Posins
+E Periodo
+1° Sem
+ Stato
+esame
+S
+ Crediti
+5.0 Docenti
+DOCENTE Data
+esame
+
+ Voto
+-
+
+12/11/26, 20:32 Carriera studente
+
+https://onlineservices.polimi.it/portale_carriera_studente/portale_carriera_studente/controller/Home.do?jaf_currentWFID=main&EV N_S HOW_HO… 2/2

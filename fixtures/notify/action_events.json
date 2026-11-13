@@ -1,0 +1,110 @@
+{
+  "events": [
+    {
+      "id": 33117911,
+      "name": "Fuzzy System Design chiude",
+      "activityname": "Fuzzy System Design",
+      "activitystr": "Quiz chiude",
+      "modulename": "quiz",
+      "eventtype": "close",
+      "component": "mod_quiz",
+      "instance": 491939,
+      "timestart": 1794394800,
+      "timesort": 1794394800,
+      "timeduration": 0,
+      "overdue": false,
+      "url": "https://webeep.polimi.it/mod/quiz/view.php?id=491939",
+      "course": {
+        "id": 23497,
+        "fullname": "056890 - UNCERTAINTY IN ARTIFICIAL INTELLIGENCE (DOCENTE) [2026-27]",
+        "coursecategory": "2026-27",
+        "viewurl": "https://webeep.polimi.it/course/view.php?id=23497"
+      },
+      "action": {
+        "name": "Tenta il quiz adesso",
+        "actionable": true,
+        "url": "https://webeep.polimi.it/mod/quiz/view.php?id=491939"
+      }
+    },
+    {
+      "id": 33117915,
+      "name": "Applications chiude",
+      "activityname": "Applications",
+      "activitystr": "Quiz chiude",
+      "modulename": "quiz",
+      "eventtype": "close",
+      "component": "mod_quiz",
+      "instance": 491941,
+      "timestart": 1794394800,
+      "timesort": 1794394800,
+      "timeduration": 0,
+      "overdue": false,
+      "url": "https://webeep.polimi.it/mod/quiz/view.php?id=491941",
+      "course": {
+        "id": 23497,
+        "fullname": "056890 - UNCERTAINTY IN ARTIFICIAL INTELLIGENCE (DOCENTE) [2026-27]",
+        "coursecategory": "2026-27",
+        "viewurl": "https://webeep.polimi.it/course/view.php?id=23497"
+      },
+      "action": {
+        "name": "Tenta il quiz adesso",
+        "actionable": true,
+        "url": "https://webeep.polimi.it/mod/quiz/view.php?id=491941"
+      }
+    },
+    {
+      "id": 33147147,
+      "name": "Fuzzy sets chiude",
+      "activityname": "Fuzzy sets",
+      "activitystr": "Quiz chiude",
+      "modulename": "quiz",
+      "eventtype": "close",
+      "component": "mod_quiz",
+      "instance": 491937,
+      "timestart": 1794394800,
+      "timesort": 1794394800,
+      "timeduration": 0,
+      "overdue": false,
+      "url": "https://webeep.polimi.it/mod/quiz/view.php?id=491937",
+      "course": {
+        "id": 23497,
+        "fullname": "056890 - UNCERTAINTY IN ARTIFICIAL INTELLIGENCE (DOCENTE) [2026-27]",
+        "coursecategory": "2026-27",
+        "viewurl": "https://webeep.polimi.it/course/view.php?id=23497"
+      },
+      "action": {
+        "name": "Tenta il quiz adesso",
+        "actionable": true,
+        "url": "https://webeep.polimi.it/mod/quiz/view.php?id=491937"
+      }
+    },
+    {
+      "id": 33117904,
+      "name": "Problem statement generation è in scadenza",
+      "activityname": "Problem statement generation",
+      "activitystr": "Consegna è in scadenza",
+      "modulename": "assign",
+      "eventtype": "due",
+      "component": "mod_assign",
+      "instance": 491943,
+      "timestart": 1794416400,
+      "timesort": 1794416400,
+      "timeduration": 0,
+      "overdue": false,
+      "url": "https://webeep.polimi.it/mod/assign/view.php?id=491943",
+      "course": {
+        "id": 23497,
+        "fullname": "056890 - UNCERTAINTY IN ARTIFICIAL INTELLIGENCE (DOCENTE) [2026-27]",
+        "coursecategory": "2026-27",
+        "viewurl": "https://webeep.polimi.it/course/view.php?id=23497"
+      },
+      "action": {
+        "name": "Aggiungi elaborato",
+        "actionable": true,
+        "url": "https://webeep.polimi.it/mod/assign/view.php?id=491943&action=editsubmission"
+      }
+    }
+  ],
+  "firstid": 0,
+  "lastid": 0
+}

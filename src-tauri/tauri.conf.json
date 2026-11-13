@@ -1,0 +1,55 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "WeBeep Sync",
+  "version": "0.1.3",
+  "identifier": "it.webeepsync.app",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../build"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "WeBeep Sync",
+        "width": 1180,
+        "height": 760,
+        "minWidth": 960,
+        "minHeight": 560,
+        "center": true,
+        "theme": "Dark",
+        "backgroundColor": "#17151e"
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src ipc: http://ipc.localhost"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis"],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "publisher": "WeBeep Sync contributors",
+    "copyright": "GPL-3.0. Progetto non ufficiale, non affiliato al Politecnico di Milano.",
+    "category": "Education",
+    "shortDescription": "Sincronizza il materiale di WeBeep (non ufficiale)",
+    "longDescription": "Scarica e tiene aggiornato il materiale dei corsi di WeBeep, con bacheca degli avvisi e scadenze. Progetto non ufficiale, non affiliato al Politecnico di Milano.",
+    "licenseFile": "../LICENSE",
+    "windows": {
+      "webviewInstallMode": { "type": "downloadBootstrapper" },
+      "nsis": {
+        "installMode": "currentUser",
+        "languages": ["Italian"],
+        "installerIcon": "icons/icon.ico"
+      }
+    }
+  }
+}

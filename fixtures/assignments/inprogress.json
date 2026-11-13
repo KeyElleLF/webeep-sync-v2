@@ -1,0 +1,396 @@
+{
+  "courses": [
+    {
+      "assignments": [],
+      "fullname": "051589 - MODEL IDENTIFICATION AND DATA ANALYSIS - 2ND MODULE (DOCENTE A) {051587 - MODEL IDENTIFICATION AND DATA ANALYSIS [sezione A]} [2026-27]",
+      "id": 25817,
+      "shortname": "051589 - MODEL IDENTIFICATION... 889103",
+      "timemodified": 1789385061
+    },
+    {
+      "assignments": [],
+      "fullname": "052534 - RECOMMENDER SYSTEMS (DOCENTE D) [2026-27]",
+      "id": 24561,
+      "shortname": "052534 - RECOMMENDER SYSTEMS 888628",
+      "timemodified": 1788270130
+    },
+    {
+      "assignments": [],
+      "fullname": "052537 - TECHNOLOGIES FOR INFORMATION SYSTEMS (DOCENTE E) [2026-27]",
+      "id": 24390,
+      "shortname": "052537 - TECHNOLOGIES FOR INF... 889897",
+      "timemodified": 1789289590
+    },
+    {
+      "assignments": [],
+      "fullname": "055633 - COMPUTER SECURITY - UIC 587 (DOCENTE H) [2026-27]",
+      "id": 24129,
+      "shortname": "055633 - COMPUTER SECURITY - ... 889047",
+      "timemodified": 1785282567
+    },
+    {
+      "assignments": [],
+      "fullname": "055812 - DIGITAL FORENSICS AND CYBERCRIME (DOCENTE I) [2026-27]",
+      "id": 24293,
+      "shortname": "055812 - DIGITAL FORENSICS AN... 889017",
+      "timemodified": 1785284050
+    },
+    {
+      "assignments": [],
+      "fullname": "056490 - DATA AND INFORMATION QUALITY (DOCENTE J) [2026-27]",
+      "id": 24951,
+      "shortname": "056490 - DATA AND INFORMATION... 890314",
+      "timemodified": 1785292555
+    },
+    {
+      "assignments": [
+        {
+          "activity": "<p>In order to be able to participate to the second test on Wednesday November 11th you should upload here a file with a picture of your identity card or of a document including a picture of  your face and your name, BEFORE Sunday November 8th  at midnight.</p>\r\n<p>People that will not have done this will be considered as not participating to the test. The call on Wednesday 11th will be done only to the persons that enrolled to the test by sending their document.</p>\r\n<p>As mentioned many times, people that are not sufficient or not satisfied of the marks obtained to the first test should not participate to the second one and will go for the regular version of the exam.</p>\r\n<p></p>",
+          "activityattachments": [],
+          "activityformat": 1,
+          "allowsubmissionsfromdate": 1791928800,
+          "attemptreopenmethod": "untilpass",
+          "blindmarking": 0,
+          "cmid": 502792,
+          "completionsubmit": 0,
+          "configs": [
+            {
+              "name": "enabled",
+              "plugin": "file",
+              "subtype": "assignsubmission",
+              "value": "1"
+            },
+            {
+              "name": "maxfilesubmissions",
+              "plugin": "file",
+              "subtype": "assignsubmission",
+              "value": "20"
+            },
+            {
+              "name": "maxsubmissionsizebytes",
+              "plugin": "file",
+              "subtype": "assignsubmission",
+              "value": "262144000"
+            },
+            {
+              "name": "filetypeslist",
+              "plugin": "file",
+              "subtype": "assignsubmission",
+              "value": ""
+            },
+            {
+              "name": "enabled",
+              "plugin": "comments",
+              "subtype": "assignsubmission",
+              "value": "1"
+            },
+            {
+              "name": "enabled",
+              "plugin": "comments",
+              "subtype": "assignfeedback",
+              "value": "1"
+            },
+            {
+              "name": "commentinline",
+              "plugin": "comments",
+              "subtype": "assignfeedback",
+              "value": "0"
+            }
+          ],
+          "course": 23497,
+          "cutoffdate": 0,
+          "duedate": 1792447200,
+          "grade": 100,
+          "gradingduedate": 0,
+          "hidegrader": 0,
+          "id": 60948,
+          "intro": "",
+          "introattachments": [],
+          "introfiles": [],
+          "introformat": 1,
+          "markingallocation": 0,
+          "markinganonymous": 0,
+          "markingworkflow": 0,
+          "maxattempts": 1,
+          "name": "Subscription to second trial",
+          "nosubmissions": 0,
+          "preventsubmissionnotingroup": 0,
+          "requireallteammemberssubmit": 0,
+          "requiresubmissionstatement": 0,
+          "revealidentities": 0,
+          "sendlatenotifications": 0,
+          "sendnotifications": 0,
+          "sendstudentnotifications": 1,
+          "submissionattachments": 0,
+          "submissiondrafts": 0,
+          "teamsubmission": 0,
+          "teamsubmissiongroupingid": 0,
+          "timelimit": 0,
+          "timemodified": 1793805799
+        },
+        {
+          "activity": "<p>You should deliver  a PDF  file named as &lt;personID.pdf&gt;, e.g. 1091298.pdf</p>",
+          "activityattachments": [],
+          "activityformat": 1,
+          "allowsubmissionsfromdate": 1793458800,
+          "attemptreopenmethod": "untilpass",
+          "blindmarking": 0,
+          "cmid": 491943,
+          "completionsubmit": 0,
+          "configs": [
+            {
+              "name": "enabled",
+              "plugin": "file",
+              "subtype": "assignsubmission",
+              "value": "1"
+            },
+            {
+              "name": "maxfilesubmissions",
+              "plugin": "file",
+              "subtype": "assignsubmission",
+              "value": "1"
+            },
+            {
+              "name": "maxsubmissionsizebytes",
+              "plugin": "file",
+              "subtype": "assignsubmission",
+              "value": "262144000"
+            },
+            {
+              "name": "filetypeslist",
+              "plugin": "file",
+              "subtype": "assignsubmission",
+              "value": ".pdf"
+            },
+            {
+              "name": "enabled",
+              "plugin": "comments",
+              "subtype": "assignsubmission",
+              "value": "1"
+            },
+            {
+              "name": "enabled",
+              "plugin": "comments",
+              "subtype": "assignfeedback",
+              "value": "1"
+            },
+            {
+              "name": "commentinline",
+              "plugin": "comments",
+              "subtype": "assignfeedback",
+              "value": "0"
+            }
+          ],
+          "course": 23497,
+          "cutoffdate": 0,
+          "duedate": 1794416400,
+          "grade": 100,
+          "gradingduedate": 0,
+          "hidegrader": 0,
+          "id": 59840,
+          "intro": "<p style=\"line-height: 100%; margin-bottom: 0in;\">Generate the definition of a problem that could be solved by a fuzzy system. <i></i></p>\r\n<p style=\"line-height: 100%; margin-bottom: 0in; font-style: normal;\">Please, give the definition of the problem and suggestions about which variables could be considered.</p>",
+          "introattachments": [],
+          "introfiles": [],
+          "introformat": 1,
+          "markingallocation": 0,
+          "markinganonymous": 0,
+          "markingworkflow": 0,
+          "maxattempts": 1,
+          "name": "Problem statement generation",
+          "nosubmissions": 0,
+          "preventsubmissionnotingroup": 0,
+          "requireallteammemberssubmit": 0,
+          "requiresubmissionstatement": 0,
+          "revealidentities": 0,
+          "sendlatenotifications": 0,
+          "sendnotifications": 0,
+          "sendstudentnotifications": 1,
+          "submissionattachments": 0,
+          "submissiondrafts": 0,
+          "teamsubmission": 0,
+          "teamsubmissiongroupingid": 0,
+          "timelimit": 0,
+          "timemodified": 1793811407
+        }
+      ],
+      "fullname": "056890 - UNCERTAINTY IN ARTIFICIAL INTELLIGENCE (DOCENTE L) [2026-27]",
+      "id": 23497,
+      "shortname": "056890 - UNCERTAINTY IN ARTIF... 889264",
+      "timemodified": 1785278594
+    },
+    {
+      "assignments": [],
+      "fullname": "056892 - DATA MINING (DOCENTE M) [2026-27]",
+      "id": 24741,
+      "shortname": "056892 - DATA MINING 889939",
+      "timemodified": 1789126923
+    },
+    {
+      "assignments": [],
+      "fullname": "063500 - WEB AND DATA SCIENCE (DOCENTE N) [2026-27]",
+      "id": 24537,
+      "shortname": "063500 - WEB AND DATA SCIENCE 889826",
+      "timemodified": 1785287331
+    },
+    {
+      "assignments": [],
+      "fullname": "088949 - ADVANCED COMPUTER ARCHITECTURES (DOCENTE O) [2026-27]",
+      "id": 23070,
+      "shortname": "088949 - ADVANCED COMPUTER AR... 889385",
+      "timemodified": 1785275809
+    },
+    {
+      "assignments": [],
+      "fullname": "089182 - FORMAL LANGUAGES AND COMPILERS (DOCENTE P) [2026-27]",
+      "id": 24477,
+      "shortname": "089182 - FORMAL LANGUAGES AND... 888317",
+      "timemodified": 1788366547
+    },
+    {
+      "assignments": [],
+      "fullname": "090037 - MODEL IDENTIFICATION AND DATA ANALYSIS - 1ST MODULE (DOCENTE S) [2026-27]",
+      "id": 25040,
+      "shortname": "090037 - MODEL IDENTIFICATION... 889024",
+      "timemodified": 1785293803
+    },
+    {
+      "assignments": [],
+      "fullname": "090958 - COMPUTER GRAPHICS (DOCENTE T) [2026-27]",
+      "id": 25130,
+      "shortname": "090958 - COMPUTER GRAPHICS 889716",
+      "timemodified": 1785294921
+    },
+    {
+      "assignments": [],
+      "fullname": "095898 - COMPUTING INFRASTRUCTURES (DOCENTE V) [2026-27]",
+      "id": 24015,
+      "shortname": "095898 - COMPUTING INFRASTRUC... 888879",
+      "timemodified": 1785281855
+    },
+    {
+      "assignments": [],
+      "fullname": "095903 - ADVANCED OPERATING SYSTEMS (DOCENTE W) [2026-27]",
+      "id": 23166,
+      "shortname": "095903 - ADVANCED OPERATING S... 888487",
+      "timemodified": 1785276478
+    },
+    {
+      "assignments": [],
+      "fullname": "097683 - MACHINE LEARNING (DOCENTE X) [2026-27]",
+      "id": 23056,
+      "shortname": "097683 - MACHINE LEARNING 888914",
+      "timemodified": 1785275718
+    },
+    {
+      "assignments": [],
+      "fullname": "Ingegneria Informatica",
+      "id": 2588,
+      "shortname": "Ingegneria Informatica",
+      "timemodified": 1632837227
+    }
+  ],
+  "warnings": [
+    {
+      "item": "module",
+      "itemid": 487312,
+      "message": "No access rights in module context",
+      "warningcode": "1"
+    },
+    {
+      "item": "module",
+      "itemid": 465520,
+      "message": "No access rights in module context",
+      "warningcode": "1"
+    },
+    {
+      "item": "module",
+      "itemid": 463678,
+      "message": "No access rights in module context",
+      "warningcode": "1"
+    },
+    {
+      "item": "module",
+      "itemid": 464836,
+      "message": "No access rights in module context",
+      "warningcode": "1"
+    },
+    {
+      "item": "module",
+      "itemid": 469467,
+      "message": "No access rights in module context",
+      "warningcode": "1"
+    },
+    {
+      "item": "module",
+      "itemid": 502794,
+      "message": "No access rights in module context",
+      "warningcode": "1"
+    },
+    {
+      "item": "module",
+      "itemid": 502932,
+      "message": "No access rights in module context",
+      "warningcode": "1"
+    },
+    {
+      "item": "module",
+      "itemid": 500724,
+      "message": "No access rights in module context",
+      "warningcode": "1"
+    },
+    {
+      "item": "module",
+      "itemid": 467992,
+      "message": "No access rights in module context",
+      "warningcode": "1"
+    },
+    {
+      "item": "module",
+      "itemid": 466554,
+      "message": "No access rights in module context",
+      "warningcode": "1"
+    },
+    {
+      "item": "module",
+      "itemid": 456210,
+      "message": "No access rights in module context",
+      "warningcode": "1"
+    },
+    {
+      "item": "module",
+      "itemid": 478157,
+      "message": "No access rights in module context",
+      "warningcode": "1"
+    },
+    {
+      "item": "module",
+      "itemid": 470105,
+      "message": "No access rights in module context",
+      "warningcode": "1"
+    },
+    {
+      "item": "module",
+      "itemid": 470735,
+      "message": "No access rights in module context",
+      "warningcode": "1"
+    },
+    {
+      "item": "module",
+      "itemid": 462875,
+      "message": "No access rights in module context",
+      "warningcode": "1"
+    },
+    {
+      "item": "module",
+      "itemid": 456897,
+      "message": "No access rights in module context",
+      "warningcode": "1"
+    },
+    {
+      "item": "module",
+      "itemid": 456112,
+      "message": "No access rights in module context",
+      "warningcode": "1"
+    }
+  ]
+}
