@@ -750,7 +750,11 @@ che nella v1 sbagliava.
       **non** è usato: Machine Learning è del 1° semestre ma non ha file datati. L'attività viene
       salvata a ogni sync (`course_activity`). `courses/state.rs`: stati `current`, `upcoming`
       (nuovo: corso del 2° semestre visto nel 1°, sincronizzato), `examPending`, `passed`, `past`,
-      `ignored`; periodo corrente: 1° dal 1° settembre al 14 febbraio. Le scelte "superato",
+      `ignored`; periodo corrente: 1° dal 1° settembre al 14 febbraio. **Appello di settembre**
+      (aggiunto il 2026-11-13): a settembre i corsi dell'AA appena finito non segnati come superati
+      restano `examPending` (sincronizzati, avvisi controllati) e diventano `past` solo dal 1°
+      ottobre; i corsi del nuovo AA sono attivi dal 1° settembre (`course_year` in
+      `courses/mod.rs`, `CourseYear::LastSession`). Le scelte "superato",
       "ignorato" e il semestre valgono per l'intero insegnamento (`teaching_key` = codice padre o
       codice del corso), in tutti gli AA. UI a sezioni (Questo semestre, Prossimo semestre, Esami in
       sospeso, Superati e ignorati, Anni precedenti), guida al primo avvio, data dell'ultimo sync)*

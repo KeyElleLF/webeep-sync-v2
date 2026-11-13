@@ -21,11 +21,13 @@ use crate::store::courses::TeachingPrefs;
 use crate::sync::paths::sanitize_component;
 use name::{CourseName, parse_fullname};
 use semester::{Activity, Semester, SemesterGuess, current_period, guess_semester};
-use state::{CourseState, derive_state};
+use state::{CourseState, CourseYear, derive_state};
 use study_plan::PlanIndex;
 
 /// The academic year starts in September.
 const ACADEMIC_YEAR_START_MONTH: u32 = 9;
+/// Last month of the September exam session, which still belongs to the previous year.
+const LAST_SESSION_MONTH: u32 = 9;
 
 /// A course as shown in the course list.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize)]
@@ -59,7 +61,25 @@ pub fn current_academic_year(today: NaiveDate) -> String {
     } else {
         today.year() - 1
     };
+    academic_year_from(start)
+}
+
+/// `2026` → `"2026-27"`, the format of `coursecategory`.
+fn academic_year_from(start: i32) -> String {
     format!("{start}-{:02}", (start + 1).rem_euclid(100))
+}
+
+/// Whether a course of academic year `category` is current, in last year's September exam
+/// session, or past.
+pub fn course_year(category: &str, today: NaiveDate) -> CourseYear {
+    if category == current_academic_year(today) {
+        return CourseYear::Current;
+    }
+    let last_year = academic_year_from(today.year() - 1);
+    if today.month() == LAST_SESSION_MONTH && category == last_year {
+        return CourseYear::LastSession;
+    }
+    CourseYear::Past
 }
 
 /// What the user decided and what earlier syncs learned, used to build the list.
@@ -86,6 +106,7 @@ pub fn course_list(
         .map(|course| {
             let parsed = parse_fullname(&course.fullname);
             let current = course.coursecategory == year;
+            let course_year = course_year(&course.coursecategory, today);
             let teaching_key = parsed
                 .teaching_code()
                 .map_or_else(|| format!("course:{}", course.id), str::to_owned);
@@ -97,7 +118,12 @@ pub fn course_list(
             let activity = inputs.activity.get(&course.id).copied();
             let plan = plan_semester(&inputs.plan, &parsed);
             let semester = guess_semester(prefs.semester, plan, activity, course.startdate);
-            let state = derive_state(prefs.state, current, semester.map(|g| g.semester), period);
+            let state = derive_state(
+                prefs.state,
+                course_year,
+                semester.map(|g| g.semester),
+                period,
+            );
             CourseInfo {
                 id: course.id,
                 fullname: course.fullname.clone(),
@@ -256,6 +282,49 @@ mod tests {
             .filter(|c| c.state == CourseState::Upcoming)
             .count();
         assert_eq!(upcoming, 8);
+    }
+
+    #[test]
+    fn september_is_still_last_years_exam_session() {
+        let on = |m, d| date(2027, m, d);
+        assert_eq!(course_year("2026-27", on(8, 31)), CourseYear::Current);
+        assert_eq!(course_year("2026-27", on(9, 10)), CourseYear::LastSession);
+        assert_eq!(course_year("2027-28", on(9, 10)), CourseYear::Current);
+        assert_eq!(course_year("2025-26", on(9, 10)), CourseYear::Past);
+        assert_eq!(course_year("2026-27", on(10, 1)), CourseYear::Past);
+        assert_eq!(course_year("CCS", on(9, 10)), CourseYear::Past);
+    }
+
+    #[test]
+    fn last_years_courses_stay_synced_until_the_end_of_september() {
+        let in_september = course_list(&timeline(), &ListInputs::default(), date(2027, 9, 10));
+        let in_october = course_list(&timeline(), &ListInputs::default(), date(2027, 10, 1));
+        let last_year = |list: &[CourseInfo]| -> Vec<(CourseState, bool)> {
+            list.iter()
+                .filter(|c| c.academic_year == "2026-27")
+                .map(|c| (c.state, c.selected))
+                .collect()
+        };
+
+        let september = last_year(&in_september);
+        assert_eq!(september.len(), 16);
+        assert!(
+            september
+                .iter()
+                .all(|&s| s == (CourseState::ExamPending, true))
+        );
+        assert!(
+            last_year(&in_october)
+                .iter()
+                .all(|&s| s == (CourseState::Past, false))
+        );
+        let older = in_september.iter().filter(|c| c.academic_year == "2025-26");
+        assert!(older.clone().count() > 0);
+        assert!(
+            older
+                .into_iter()
+                .all(|c| c.state == CourseState::Past && !c.selected)
+        );
     }
 
     #[test]

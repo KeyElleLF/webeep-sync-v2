@@ -41,9 +41,21 @@ pub enum ManualState {
     Ignored,
 }
 
+/// Where the academic year of a course stands today.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CourseYear {
+    /// The current academic year.
+    Current,
+    /// Last academic year, during its September exam session: the new year has started
+    /// (lessons begin mid-September) but exams of last year are still being taken.
+    LastSession,
+    /// Older, or last year after September.
+    Past,
+}
+
 pub fn derive_state(
     manual: Option<ManualState>,
-    current_year: bool,
+    year: CourseYear,
     semester: Option<Semester>,
     period: Semester,
 ) -> CourseState {
@@ -52,8 +64,11 @@ pub fn derive_state(
         Some(ManualState::Ignored) => return CourseState::Ignored,
         None => {}
     }
-    if !current_year {
-        return CourseState::Past;
+    match year {
+        CourseYear::Current => {}
+        // Not marked as passed: its exam may still be taken in September.
+        CourseYear::LastSession => return CourseState::ExamPending,
+        CourseYear::Past => return CourseState::Past,
     }
     match (semester, period) {
         (Some(Semester::First), Semester::Second) => CourseState::ExamPending,
@@ -70,11 +85,16 @@ mod tests {
     #[test]
     fn manual_states_win() {
         assert_eq!(
-            derive_state(Some(ManualState::Passed), true, Some(First), First),
+            derive_state(
+                Some(ManualState::Passed),
+                CourseYear::Current,
+                Some(First),
+                First
+            ),
             CourseState::Passed
         );
         assert_eq!(
-            derive_state(Some(ManualState::Ignored), false, None, First),
+            derive_state(Some(ManualState::Ignored), CourseYear::Past, None, First),
             CourseState::Ignored
         );
     }
@@ -82,30 +102,59 @@ mod tests {
     #[test]
     fn other_years_are_past() {
         assert_eq!(
-            derive_state(None, false, Some(First), First),
+            derive_state(None, CourseYear::Past, Some(First), First),
             CourseState::Past
+        );
+    }
+
+    #[test]
+    fn last_years_courses_wait_for_the_september_exam_session() {
+        let pending = CourseState::ExamPending;
+        assert_eq!(
+            derive_state(None, CourseYear::LastSession, Some(First), First),
+            pending
+        );
+        assert_eq!(
+            derive_state(None, CourseYear::LastSession, Some(Second), First),
+            pending
+        );
+        assert_eq!(
+            derive_state(None, CourseYear::LastSession, None, First),
+            pending
+        );
+        assert_eq!(
+            derive_state(
+                Some(ManualState::Passed),
+                CourseYear::LastSession,
+                None,
+                First
+            ),
+            CourseState::Passed
         );
     }
 
     #[test]
     fn current_year_depends_on_the_semester() {
         assert_eq!(
-            derive_state(None, true, Some(First), First),
+            derive_state(None, CourseYear::Current, Some(First), First),
             CourseState::Current
         );
         assert_eq!(
-            derive_state(None, true, Some(Second), First),
+            derive_state(None, CourseYear::Current, Some(Second), First),
             CourseState::Upcoming
         );
         assert_eq!(
-            derive_state(None, true, Some(First), Second),
+            derive_state(None, CourseYear::Current, Some(First), Second),
             CourseState::ExamPending
         );
         assert_eq!(
-            derive_state(None, true, Some(Second), Second),
+            derive_state(None, CourseYear::Current, Some(Second), Second),
             CourseState::Current
         );
-        assert_eq!(derive_state(None, true, None, Second), CourseState::Current);
+        assert_eq!(
+            derive_state(None, CourseYear::Current, None, Second),
+            CourseState::Current
+        );
     }
 
     #[test]
