@@ -53,7 +53,7 @@
 
 <p class="muted">{t("support.intro")}</p>
 <div class="buttons">
-  <button class="primary" disabled={disabled || !info} onclick={report}>{t("support.report")}</button>
+  <button disabled={disabled || !info} onclick={report}>{t("support.report")}</button>
   <button disabled={disabled || working} onclick={showPreview}>{t("support.export")}</button>
 </div>
 
@@ -97,7 +97,7 @@
   }
 
   .ok {
-    color: var(--accent);
+    color: var(--ok);
   }
 
   .error {

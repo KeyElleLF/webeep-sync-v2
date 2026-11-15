@@ -27,3 +27,9 @@ Thumbs.db
 # Personal Claude Code settings and notes (personal data: never in the repo)
 .claude/settings.local.json
 CLAUDE.local.md
+
+# Impeccable design skill: local working files, never published
+**/.impeccable/
+**/PRODUCT.md
+**/DESIGN.md
+**/DESIGN.json

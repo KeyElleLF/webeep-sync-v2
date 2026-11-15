@@ -37,11 +37,20 @@
     border: 1px solid var(--accent);
     border-radius: 50%;
     color: var(--accent);
-    font-size: 0.75rem;
+    font-size: 0.72rem;
     font-weight: 700;
-    font-style: italic;
-    font-family: Georgia, serif;
     cursor: help;
+    transition:
+      background-color var(--t-out) var(--ease),
+      color var(--t-out) var(--ease);
+  }
+
+  .icon:hover,
+  .icon:focus-visible {
+    background: var(--accent-strong);
+    border-color: var(--accent-strong);
+    color: var(--on-accent);
+    transition-duration: var(--t-in);
   }
 
   .icon:focus-visible {
@@ -58,21 +67,32 @@
     padding: 10px 12px;
     border: 1px solid var(--border);
     border-radius: 8px;
-    background: var(--sidebar);
+    background: #1a1a1a;
     color: var(--text);
     font-size: 0.85rem;
     font-weight: 400;
-    line-height: 1.45;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+    line-height: 1.5;
+    white-space: normal;
+    box-shadow: var(--shadow-pop);
     visibility: hidden;
     opacity: 0;
-    transition: opacity 0.12s;
+    transform: translateY(-4px);
+    transition:
+      opacity var(--t-out) var(--ease),
+      transform var(--t-out) var(--ease),
+      visibility 0s linear var(--t-out);
     pointer-events: none;
   }
 
+  /* Shown after a short pause, so passing over the "i" does not flash it. */
   .wrap:hover .tip,
   .icon:focus-visible + .tip {
     visibility: visible;
     opacity: 1;
+    transform: none;
+    transition:
+      opacity 160ms var(--ease) 120ms,
+      transform 160ms var(--ease) 120ms,
+      visibility 0s linear 120ms;
   }
 </style>

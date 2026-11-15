@@ -3,6 +3,8 @@
   import { formatBytes } from "$lib/format";
   import { locale, t } from "$lib/i18n/index.svelte";
   import { discussionUrl, interceptLinks, openExternal } from "$lib/links";
+  import Icon from "./Icon.svelte";
+  import { view } from "$lib/view-state.svelte";
 
   interface Props {
     announcements: Announcement[];
@@ -14,9 +16,6 @@
   }
 
   let { announcements, courses, muted, disabled, onread, onmute }: Props = $props();
-  let courseFilter = $state<number | "all">("all");
-  let unreadOnly = $state(false);
-  let selectedId = $state<number | null>(null);
   let list = $state<HTMLUListElement>();
 
   const FULL = $derived(
@@ -36,11 +35,11 @@
   );
   const shown = $derived(
     announcements.filter(
-      (a) => (courseFilter === "all" || a.courseId === courseFilter) && (!unreadOnly || !a.read),
+      (a) => (view.boardCourse === "all" || a.courseId === view.boardCourse) && (!view.boardUnreadOnly || !a.read),
     ),
   );
   const unread = $derived(announcements.filter((a) => !a.read).length);
-  const selected = $derived(announcements.find((a) => a.id === selectedId) ?? null);
+  const selected = $derived(announcements.find((a) => a.id === view.boardSelected) ?? null);
 
   /** Time for today's posts, day and month otherwise (with the year if not this year). */
   function shortDate(seconds: number): string {
@@ -51,7 +50,7 @@
   }
 
   function select(a: Announcement) {
-    selectedId = a.id;
+    view.boardSelected = a.id;
     if (!a.read) onread(a.id);
   }
 
@@ -59,7 +58,7 @@
   function move(event: KeyboardEvent) {
     if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
     event.preventDefault();
-    const index = shown.findIndex((a) => a.id === selectedId);
+    const index = shown.findIndex((a) => a.id === view.boardSelected);
     const step = event.key === "ArrowDown" ? 1 : -1;
     const next = shown[Math.min(Math.max(index + step, 0), shown.length - 1)];
     if (!next) return;
@@ -71,21 +70,22 @@
 <div class="board">
   <section class="list-pane" aria-label={t("board.listLabel")}>
     <div class="filters">
-      <select bind:value={courseFilter} aria-label={t("common.course")}>
+      <select bind:value={view.boardCourse} aria-label={t("common.course")}>
         <option value="all">{t("board.allCourses")}</option>
         {#each withPosts as c (c.id)}
           <option value={c.id}>{c.name}</option>
         {/each}
       </select>
       <label>
-        <input type="checkbox" bind:checked={unreadOnly} />
+        <input type="checkbox" class="switch" bind:checked={view.boardUnreadOnly} />
         {t("board.unreadOnly", { count: unread })}
       </label>
-      {#if courseFilter !== "all"}
-        {@const id = courseFilter}
+      {#if view.boardCourse !== "all"}
+        {@const id = view.boardCourse}
         <label>
           <input
             type="checkbox"
+            class="switch"
             checked={muted.includes(id)}
             {disabled}
             onchange={(e) => onmute(id, e.currentTarget.checked)}
@@ -96,7 +96,7 @@
     </div>
 
     {#if announcements.length === 0}
-      <p class="empty">{t("board.empty", { button: t("board.checkNow") })}</p>
+      <p class="empty"><Icon name="inbox" size={22} />{t("board.empty", { button: t("board.checkNow") })}</p>
     {:else if shown.length === 0}
       <p class="empty">{t("board.noMatch")}</p>
     {/if}
@@ -107,34 +107,40 @@
           <button
             class="item"
             class:unread={!a.read}
-            class:active={a.id === selectedId}
-            aria-current={a.id === selectedId ? "true" : undefined}
+            class:active={a.id === view.boardSelected}
+            aria-current={a.id === view.boardSelected ? "true" : undefined}
             data-id={a.id}
             onclick={() => select(a)}
             onkeydown={move}
           >
             <span class="top">
-              <span class="subject ellipsis">{a.pinned ? "📌 " : ""}{a.subject}</span>
+              {#if !a.read}<span class="dot" aria-hidden="true"></span>{/if}
+              {#if a.pinned}<Icon name="pin" size={13} class="pin" />{/if}
+              <span class="subject ellipsis">{a.subject}</span>
               <span class="date">{shortDate(a.created)}</span>
             </span>
-            <span class="course ellipsis">{names.get(a.courseId) ?? ""}</span>
+            <span class="course course-name ellipsis">{names.get(a.courseId) ?? ""}</span>
           </button>
         </li>
       {/each}
     </ul>
   </section>
 
-  <article class="reader" aria-live="polite">
+  <article class="reader">
     {#if selected}
+      {#key selected.id}
+      <div class="post">
       <header>
-        <h2>{selected.pinned ? "📌 " : ""}{selected.subject}</h2>
+        <h2>
+          {#if selected.pinned}<Icon name="pin" size={17} class="pin" />{/if}{selected.subject}
+        </h2>
         <p class="meta">
-          {names.get(selected.courseId) ?? ""} · {selected.author} · {FULL.format(
+          <span class="course-name">{names.get(selected.courseId) ?? ""}</span> · {selected.author} · {FULL.format(
             new Date(selected.created * 1000),
           )}
         </p>
         <button class="link" onclick={() => openExternal(discussionUrl(selected.id))}>
-          {t("common.openOnWebeep")}
+          {t("common.openOnWebeep")}<Icon name="external" size={13} />
         </button>
       </header>
       <!-- Sanitized by the backend (allow-list, no scripts); links open in the browser. -->
@@ -145,13 +151,19 @@
           <p class="meta">{t("board.attachments")}</p>
           <ul>
             {#each selected.attachments as file (file.fileurl)}
-              <li>{file.filename} ({formatBytes(file.filesize)})</li>
+              <li>
+                <Icon name="paperclip" size={14} />
+                <span class="ellipsis">{file.filename}</span>
+                <span class="size">{formatBytes(file.filesize)}</span>
+              </li>
             {/each}
           </ul>
         </div>
       {/if}
+      </div>
+      {/key}
     {:else if shown.length > 0}
-      <p class="placeholder">{t("board.selectHint")}</p>
+      <p class="placeholder"><Icon name="board" size={28} />{t("board.selectHint")}</p>
     {/if}
   </article>
 </div>
@@ -169,28 +181,35 @@
     flex-direction: column;
     min-height: 0;
     border-right: 1px solid var(--border);
-    background: var(--card);
+    background: var(--sidebar);
   }
 
   .filters {
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    padding: 12px;
+    gap: 10px;
+    padding: 14px;
     border-bottom: 1px solid var(--border);
   }
 
   .filters label {
     display: flex;
-    gap: 6px;
+    gap: 10px;
     align-items: center;
     color: var(--muted);
     font-size: 0.9em;
+    cursor: pointer;
+    user-select: none;
   }
 
   .empty {
-    padding: 0 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 32px 20px;
     color: var(--muted);
+    text-align: center;
   }
 
   .list-pane ul {
@@ -199,47 +218,65 @@
     overflow-y: auto;
     list-style: none;
     margin: 0;
-    padding: 0;
+    padding: 6px;
   }
 
   .list-pane li + li {
-    border-top: 1px solid var(--border);
+    margin-top: 2px;
   }
 
   .item {
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    align-items: stretch;
+    gap: 3px;
     width: 100%;
-    padding: 8px 12px 8px 14px;
+    padding: 9px 12px;
     border: none;
-    border-left: 3px solid transparent;
-    border-radius: 0;
+    border-radius: var(--r-md);
     background: none;
+    box-shadow: none;
+    font-weight: 400;
     text-align: left;
+    white-space: normal;
+    transition:
+      background-color var(--t-out) var(--ease),
+      transform var(--t-press) var(--ease);
   }
 
   .item:hover:not(.active) {
-    background: var(--hover);
+    background: rgba(255, 255, 255, 0.04);
+    transition-duration: var(--t-in);
   }
 
-  /* The left border marks unread posts only (buttons otherwise get an accent border on hover). */
-  .item:hover:not(.unread) {
-    border-left-color: transparent;
+  .item:active {
+    transform: scale(0.99);
   }
 
   .item.active {
     background: var(--selected);
   }
 
-  .item.unread {
-    border-left-color: var(--accent);
-  }
-
   .top {
     display: flex;
-    gap: 8px;
-    align-items: baseline;
+    gap: 7px;
+    align-items: center;
+    min-width: 0;
+  }
+
+  /* Unread: a violet dot, and the subject in bold. */
+  .dot {
+    flex: none;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: pop 260ms var(--ease-enter);
+  }
+
+  /* Pinned is not a warning: the icon alone marks it. */
+  .top :global(.pin) {
+    color: var(--muted);
   }
 
   .subject {
@@ -247,68 +284,141 @@
   }
 
   .unread .subject {
-    font-weight: 700;
+    font-weight: 650;
   }
 
   .date,
   .course {
     color: var(--muted);
-    font-size: 0.85em;
+    font-size: 0.86em;
   }
 
   .date {
     flex: none;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .unread .date {
+    color: var(--accent);
+  }
+
+  .course.course-name {
+    font-size: 0.96em;
   }
 
   .reader {
     min-height: 0;
     overflow-y: auto;
-    padding: 20px 28px;
+    padding: 24px 32px;
+  }
+
+  .post {
+    animation: rise-in 220ms var(--ease-enter);
   }
 
   .reader header {
-    padding-bottom: 12px;
-    margin-bottom: 16px;
+    padding-bottom: 14px;
+    margin-bottom: 18px;
     border-bottom: 1px solid var(--border);
   }
 
   .reader h2 {
-    margin: 0 0 4px;
-    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 6px;
+    font-size: 1.3rem;
+    font-weight: 650;
+  }
+
+  .reader h2 :global(.pin) {
+    color: var(--muted);
+  }
+
+  .reader header button.link {
+    gap: 5px;
   }
 
   .meta {
-    margin: 0 0 6px;
+    margin: 0 0 8px;
     color: var(--muted);
-    font-size: 0.9em;
+    font-size: 0.88em;
   }
 
   .message {
-    max-width: 80ch;
-    line-height: 1.5;
+    max-width: 75ch;
+    font-size: 1.02em;
+    line-height: 1.6;
     overflow-wrap: anywhere;
+  }
+
+  .message :global(p:first-child) {
+    margin-top: 0;
   }
 
   .message :global(a) {
     color: var(--accent);
+    text-decoration-color: color-mix(in srgb, var(--accent) 40%, transparent);
+    text-underline-offset: 2px;
+    transition: text-decoration-color var(--t-out) var(--ease);
+  }
+
+  .message :global(a:hover) {
+    text-decoration-color: currentColor;
   }
 
   .message :global(pre) {
     white-space: pre-wrap;
+    padding: 10px 12px;
+    border-radius: var(--r-sm);
+    background: var(--sidebar);
   }
 
   .attachments {
-    margin-top: 20px;
+    max-width: 75ch;
+    margin-top: 24px;
   }
 
   .attachments ul {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
     margin: 0;
-    padding-left: 20px;
+    padding: 0;
+    list-style: none;
+  }
+
+  /* Plain lines, not buttons: the files open from the announcement on WeBeep. */
+  .attachments li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    color: var(--muted);
+  }
+
+  .attachments li .ellipsis {
+    flex: 1;
+    color: var(--text);
+  }
+
+  .size {
+    flex: none;
+    font-size: 0.85em;
+    font-variant-numeric: tabular-nums;
   }
 
   .placeholder {
-    margin-top: 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    margin-top: 80px;
     color: var(--muted);
     text-align: center;
+  }
+
+  .placeholder :global(.icon) {
+    opacity: 0.6;
   }
 </style>

@@ -6,6 +6,8 @@
     api,
     ANNOUNCEMENTS_EVENT,
     SYNC_FINISHED_EVENT,
+    SYNC_FAILED_EVENT,
+    SYNC_STARTED_EVENT,
     SYNC_PROGRESS_EVENT,
     type Announcement,
     type CleanupPreview,
@@ -22,7 +24,7 @@
     type StateOutcome,
     type SyncProgress,
   } from "$lib/api";
-  import { formatBytes, isActive } from "$lib/format";
+  import { formatBytes, isActive, type RowStatus } from "$lib/format";
   import {
     type Lang,
     type MessageKey,
@@ -51,6 +53,8 @@
   import SettingsPanel from "$lib/components/SettingsPanel.svelte";
   import StudyPlanDialog, { type Feedback } from "$lib/components/StudyPlanDialog.svelte";
   import Sidebar from "$lib/components/Sidebar.svelte";
+  import Icon, { type IconName } from "$lib/components/Icon.svelte";
+  import { installSmoothScroll } from "$lib/smooth-scroll";
   import SyncSummary from "$lib/components/SyncSummary.svelte";
 
   type Tab = "courses" | "links" | "board" | "deadlines" | "settings";
@@ -61,7 +65,15 @@
     deadlines: "nav.deadlines",
     settings: "nav.settings",
   };
+  const ICONS: Record<Tab, IconName> = {
+    courses: "courses",
+    links: "links",
+    board: "board",
+    deadlines: "deadlines",
+    settings: "settings",
+  };
   const SYNC_LABEL: MessageKey = "status.syncing";
+  const DONE_MS = 8000;
   const FOLDER_MESSAGES = {
     same: null,
     moved: "courses.folderMoved",
@@ -73,6 +85,19 @@
   /** What the app is doing, as a text key (translated when shown, so it follows the language). */
   let busy = $state<MessageKey | null>(null);
   let error = $state<string | null>(null);
+  /** The last error, shown until closed: the next action does not wipe it (`error` is per action).
+   *  It says what failed, offers to retry when that makes sense, and stays on the tab it came from. */
+  let shownError = $state<ShownError | null>(null);
+  /** A sync started from the button (an automatic one shows up through `progress` only). */
+  let syncRequested = $state(false);
+  /** An automatic sync is running (known from its start event, before any progress). */
+  let backgroundSync = $state(false);
+  let cancelling = $state(false);
+  /** "Tutto aggiornato · …" after a sync, for a few seconds in the status bar. */
+  let doneMessage = $state<string | null>(null);
+  let doneTimer: ReturnType<typeof setTimeout> | undefined;
+  /** Outcome of the last sync per course, kept for the course list after the summary is closed. */
+  let results = $state<Map<number, RowStatus>>(new Map());
   let notice = $state<string | null>(null);
   let root = $state<string | null>(null);
   let settings = $state<Settings | null>(null);
@@ -96,6 +121,9 @@
   const showUpdate = $derived(availableUpdate() !== null && !updateDismissed());
 
   const idle = $derived(busy === null);
+  const syncRunning = $derived(syncRequested || backgroundSync || progress !== null);
+  /** Courses, folders and the study plan stay still while a sync uses them; the rest stays usable. */
+  const canEdit = $derived(idle && !syncRunning);
   const unread = $derived(announcements.filter((a) => !a.read).length);
   // Links of passed, ignored or past courses stay saved but are not shown.
   const activeNames = $derived(
@@ -110,9 +138,50 @@
     (Object.keys(TITLES) as Tab[]).map((id) => ({
       id,
       label: t(TITLES[id]),
+      icon: ICONS[id],
       badge: id === "board" ? unread : id === "links" ? newLinks : undefined,
+      alert: shownError?.tab === id && tab !== id,
     })),
   );
+
+  interface ShownError {
+    text: string;
+    title: MessageKey;
+    retry: (() => void) | null;
+    tab: Tab | null;
+  }
+
+  /** What a failed action is called, how to try again and where it belongs. */
+  const FAILURES: Partial<Record<MessageKey, Omit<ShownError, "text">>> = {
+    "status.syncing": { title: "error.sync", retry: () => void sync(), tab: "courses" },
+    "status.checkingBoard": { title: "error.board", retry: () => void refreshBoard(), tab: "board" },
+    "status.loadingDeadlines": {
+      title: "error.deadlines",
+      retry: () => void loadDeadlines(),
+      tab: "deadlines",
+    },
+    "status.loadingCourses": {
+      title: "error.courses",
+      retry: () => void loadCourses(),
+      tab: "courses",
+    },
+    "status.readingLinks": { title: "error.links", retry: () => void loadLinks(), tab: "links" },
+    "status.loggingIn": { title: "error.login", retry: () => void login(), tab: null },
+  };
+
+  function fail(label: MessageKey, err: unknown) {
+    error = err instanceof Error ? err.message : String(err);
+    const known = FAILURES[label];
+    shownError = {
+      text: error,
+      ...(known ?? { title: "error.generic", retry: null, tab: session?.loggedIn ? tab : null }),
+    };
+  }
+
+  function retry(failure: ShownError) {
+    shownError = null;
+    failure.retry?.();
+  }
 
   async function run<T>(label: MessageKey, action: () => Promise<T>): Promise<T | undefined> {
     busy = label;
@@ -121,11 +190,27 @@
     try {
       return await action();
     } catch (err) {
-      error = err instanceof Error ? err.message : String(err);
+      fail(label, err);
       return undefined;
     } finally {
       busy = null;
     }
+  }
+
+  type Outcome<T> = { ok: true; value: T } | { ok: false; message: string };
+
+  /** Like `run`, but tells this action's own outcome (the shared `error` may come from another). */
+  async function attempt<T>(label: MessageKey, action: () => Promise<T>): Promise<Outcome<T>> {
+    let outcome: Outcome<T> = { ok: false, message: "" };
+    await run(label, async () => {
+      try {
+        outcome = { ok: true, value: await action() };
+      } catch (err) {
+        outcome = { ok: false, message: err instanceof Error ? err.message : String(err) };
+        throw err;
+      }
+    });
+    return outcome;
   }
 
   /** The saved language, or Windows' one on the first run (then saved). */
@@ -169,12 +254,17 @@
 
   async function login() {
     session = (await run("status.loggingIn", api.login)) ?? session;
-    if (session?.loggedIn) await loadLibrary();
+    if (!session?.loggedIn) return;
+    // A failed attempt before this one is no longer news.
+    shownError = null;
+    await loadLibrary();
   }
 
   async function logout() {
     await run("status.loggingOut", api.logout);
     session = { loggedIn: false, fullname: null, moodleRelease: null };
+    shownError = null;
+    results = new Map();
     courses = null;
     summaries = null;
     suggestions = [];
@@ -193,8 +283,10 @@
     const update = (value: boolean) =>
       (courses = courses?.map((c) => (c.id === course.id ? { ...c, selected: value } : c)) ?? null);
     update(selected);
-    await run("status.savingSelection", () => api.setCourseSelected(course.id, selected));
-    if (error) update(!selected);
+    const saved = await attempt("status.savingSelection", () =>
+      api.setCourseSelected(course.id, selected),
+    );
+    if (!saved.ok) update(!selected);
   }
 
   async function rename(course: CourseRow, folder: string) {
@@ -261,28 +353,66 @@
     settings = (await run("status.savingSettings", () => api.setSettings(next))) ?? settings;
   }
 
+  /** The sync has a state of its own, so the board, links and deadlines stay usable meanwhile. */
   async function sync() {
     summaries = null;
-    const result = await run(SYNC_LABEL, api.syncNow);
-    progress = null;
-    if (result) {
-      await synced(result);
-      return;
-    }
-    // A failed sync may mean the session expired: update the account card, keep the error.
+    results = new Map();
+    doneMessage = null;
+    cancelling = false;
+    syncRequested = true;
     try {
-      session = await api.authStatus();
-    } catch {
-      // The error of the sync is the one worth showing.
+      const result = await api.syncNow();
+      progress = null;
+      await synced(result);
+    } catch (err) {
+      // Pressed just as an automatic sync started: that one goes on and reports by itself.
+      if (backgroundSync) return;
+      progress = null;
+      fail(SYNC_LABEL, err);
+      // A failed sync may mean the session expired: update the account card, keep the error.
+      session = (await api.authStatus().catch(() => null)) ?? session;
+    } finally {
+      syncRequested = false;
+      cancelling = false;
     }
   }
 
+  async function cancelSync() {
+    cancelling = true;
+    await api.cancelSync().catch((err) => fail("status.syncing", err));
+  }
+
+  function showDone(message: string) {
+    doneMessage = message;
+    clearTimeout(doneTimer);
+    doneTimer = setTimeout(() => (doneMessage = null), DONE_MS);
+  }
+
+  function doneText(result: CourseSummary[]): string {
+    if (cancelling) return tn("sync.cancelled", result.length);
+    const files = result.reduce((n, s) => n + s.report.downloaded.length + s.report.updated.length, 0);
+    return files > 0 ? tn("sync.doneNews", files) : tn("sync.doneNothing", result.length);
+  }
+
   async function synced(result: CourseSummary[]) {
+    showDone(doneText(result));
+    cancelling = false;
     summaries = result;
+    results = new Map(result.map((s) => [s.id, rowStatus(s)]));
+    // A sync that went through makes an older error stale.
+    if (result.every((s) => !s.error)) shownError = null;
     lastSync = Math.floor(Date.now() / 1000);
     // File dates just learned refine the semester guesses.
     await loadCourses();
     await loadLinks();
+  }
+
+  function rowStatus(s: CourseSummary): RowStatus {
+    if (s.error) return { kind: "error", message: s.error };
+    const failed = s.report.errors.length;
+    if (failed > 0) return { kind: "error", message: `${failed} ${tn("sync.errors", failed)}` };
+    const files = [...s.report.downloaded, ...s.report.updated];
+    return { kind: "done", added: files.length, files };
   }
 
   async function loadLinks() {
@@ -290,14 +420,14 @@
   }
 
   async function openLink(link: CourseLink) {
-    await run("status.openingLink", () => openExternal(link.url));
-    if (link.seen || error) return;
+    const opened = await attempt("status.openingLink", () => openExternal(link.url));
+    if (link.seen || !opened.ok) return;
     await markLinksSeen(link.id);
   }
 
   async function markLinksSeen(id: number | null) {
-    await run("status.saving", () => api.markLinksSeen(id));
-    if (error) return;
+    const saved = await attempt("status.saving", () => api.markLinksSeen(id));
+    if (!saved.ok) return;
     links = links.map((l) => (id === null || l.id === id ? { ...l, seen: true } : l));
   }
 
@@ -309,11 +439,12 @@
   /** Imports the plan from the picker or from a dropped file, then refreshes the courses. */
   async function importPlan(source: () => Promise<PlanStatus | null>) {
     planFeedback = null;
-    const result = await run("status.readingPlan", source);
-    if (error) {
-      planFeedback = { error: true, text: error };
+    const read = await attempt("status.readingPlan", source);
+    if (!read.ok) {
+      planFeedback = { error: true, text: read.message };
       return;
     }
+    const result = read.value;
     if (!result) return;
     planStatus = result;
     await loadCourses();
@@ -328,9 +459,9 @@
   }
 
   async function clearPlan() {
-    await run("status.removingPlan", api.clearStudyPlan);
-    if (error) {
-      planFeedback = { error: true, text: error };
+    const removed = await attempt("status.removingPlan", api.clearStudyPlan);
+    if (!removed.ok) {
+      planFeedback = { error: true, text: removed.message };
       return;
     }
     planStatus = null;
@@ -360,6 +491,25 @@
     deadlines = (await run("status.loadingDeadlines", api.listDeadlines)) ?? deadlines;
   }
 
+  const TAB_ORDER = Object.keys(TITLES) as Tab[];
+
+  /** Ctrl+R or F5 syncs (instead of reloading the window), Ctrl+1…5 opens a tab. */
+  function shortcut(event: KeyboardEvent) {
+    if (!session?.loggedIn || planOpen || (cleanups.length > 0 && !cleanupLater)) return;
+    const ctrl = event.ctrlKey || event.metaKey;
+    const refresh = event.key === "F5" || (ctrl && !event.shiftKey && event.key.toLowerCase() === "r");
+    if (refresh) {
+      event.preventDefault();
+      if (canEdit && root && courses) void sync();
+      return;
+    }
+    const index = ctrl && !event.altKey ? Number(event.key) - 1 : -1;
+    if (index >= 0 && index < TAB_ORDER.length) {
+      event.preventDefault();
+      open(TAB_ORDER[index]);
+    }
+  }
+
   function open(next: Tab) {
     tab = next;
     if (next === "deadlines" && deadlines === null) void loadDeadlines();
@@ -383,6 +533,7 @@
 
   onMount(() => {
     refresh();
+    const removeSmoothScroll = installSmoothScroll();
     // Only the installed app updates itself (a dev build would offer the release over itself).
     let updateTimer: ReturnType<typeof setInterval> | undefined;
     if (import.meta.env.PROD) {
@@ -393,20 +544,36 @@
     const stops = [
       listen<SyncProgress>(SYNC_PROGRESS_EVENT, (e) => (progress = e.payload)),
       // Automatic syncs (while the window is open) report here too.
+      listen(SYNC_STARTED_EVENT, () => {
+        if (!syncRequested) backgroundSync = true;
+      }),
+      // Every sync ends with one of these two, so the UI never stays "syncing".
+      listen<{ message: string }>(SYNC_FAILED_EVENT, (e) => {
+        progress = null;
+        if (syncRequested) return;
+        backgroundSync = false;
+        cancelling = false;
+        fail(SYNC_LABEL, new Error(e.payload.message));
+      }),
       listen<CourseSummary[]>(SYNC_FINISHED_EVENT, (e) => {
         progress = null;
-        if (idle) void synced(e.payload);
+        backgroundSync = false;
+        // A sync from the button reports through its own call.
+        if (!syncRequested) void synced(e.payload);
       }),
       listen<number>(ANNOUNCEMENTS_EVENT, async () => {
         announcements = await api.listAnnouncements().catch(() => announcements);
       }),
     ];
     return () => {
+      removeSmoothScroll();
       clearInterval(updateTimer);
       stops.forEach((p) => p.then((stop) => stop()));
     };
   });
 </script>
+
+<svelte:window onkeydown={shortcut} />
 
 {#if session?.loggedIn}
   <div class="app">
@@ -416,10 +583,13 @@
       fullname={session.fullname}
       {lastSync}
       {progress}
-      syncing={busy === SYNC_LABEL || progress !== null}
-      canSync={idle && !!root && !!courses}
+      syncing={syncRunning}
+      {cancelling}
+      done={doneMessage !== null && !syncRunning}
+      canSync={canEdit && !!root && !!courses}
       onopen={open}
       onsync={sync}
+      oncancel={cancelSync}
     />
 
     <main>
@@ -427,10 +597,11 @@
         <h1>{t(TITLES[tab])}</h1>
         <div class="actions">
           {#if tab === "courses"}
-            <span class="root ellipsis" title={root ?? undefined}>
-              {root ?? t("courses.noRoot")}
+            <span class="root" class:empty={!root} title={root ?? undefined}>
+              <Icon name="folder" size={14} />
+              <span class="ellipsis">{root ?? t("courses.noRoot")}</span>
             </span>
-            <button onclick={chooseRoot} disabled={!idle}>
+            <button onclick={chooseRoot} disabled={!canEdit}>
               {root ? t("common.changeFolder") : t("common.chooseFolder")}
             </button>
           {:else if tab === "links"}
@@ -443,10 +614,33 @@
               {t("board.markAllRead")}
             </button>
           {:else if tab === "deadlines"}
-            <button disabled={!idle} onclick={loadDeadlines}>{t("deadlines.refresh")}</button>
+            <button disabled={!idle} onclick={loadDeadlines}>{t("board.checkNow")}</button>
           {/if}
         </div>
       </header>
+
+      {#if shownError && (shownError.tab === null || shownError.tab === tab)}
+        {@const failure = shownError}
+        <div class="error-banner" role="alert">
+          <Icon name="alert" size={18} />
+          <p><strong>{t(failure.title)}.</strong> {failure.text}</p>
+          {#if failure.retry}
+            <button
+              class="retry"
+              disabled={!canEdit && failure.tab === "courses"}
+              onclick={() => retry(failure)}
+              >{t("common.retry")}</button
+            >
+          {/if}
+          {#if appInfo}
+            {@const info = appInfo}
+            <button class="link" onclick={() => openExternal(bugReportUrl(info, failure.text))}>
+              {t("support.reportShort")}
+            </button>
+          {/if}
+          <button class="link" onclick={() => (shownError = error = null)}>{t("common.close")}</button>
+        </div>
+      {/if}
 
       {#if suggestions.length > 0 || showUpdate}
         <div class="banners">
@@ -460,41 +654,44 @@
               <div class="buttons">
                 <button
                   class="primary"
-                  disabled={!idle}
+                  disabled={!canEdit}
                   onclick={() => setState(s.teachingKey, "passed")}
                   >{t("courses.suggestion.yes")}</button
                 >
-                <button disabled={!idle} onclick={() => dismiss(s)}>{t("common.no")}</button>
+                <button disabled={!canEdit} onclick={() => dismiss(s)}>{t("common.no")}</button>
               </div>
             </section>
           {/each}
         </div>
       {/if}
 
+      <!-- Re-created on every tab: each page opens at its top, with a short settle. -->
+      {#key tab}
       <div class="content" class:fill={tab === "board"}>
         {#if tab === "courses"}
           {#if !root || !lastSync}
             <Onboarding loggedIn={true} hasRoot={!!root} hasSynced={!!lastSync} />
           {/if}
           {#if summaries}
-            <section class="card">
-              <div class="card-head">
-                <h2>{t("sync.lastSync")}</h2>
-                <button class="link" onclick={() => (summaries = null)}>{t("common.close")}</button>
-              </div>
-              <SyncSummary {summaries} />
-            </section>
+            <SyncSummary
+              {summaries}
+              onclose={() => (summaries = null)}
+              onfolder={openCourseFolder}
+            />
           {/if}
           {#if courses}
             <CourseList
               {courses}
-              disabled={!idle}
+              disabled={!canEdit}
               ontoggle={toggle}
               onrename={rename}
               onstate={(course, state) => setState(course.teachingKey, state)}
               onsemester={setSemester}
               planLoaded={planStatus !== null}
               onplan={openPlan}
+              {results}
+              syncingName={progress?.name ?? null}
+              onfolder={openCourseFolder}
             />
           {:else}
             <p class="muted">{t("courses.notLoaded")}</p>
@@ -524,7 +721,7 @@
             <section class="card">
               <h2>{t("settings.account")}</h2>
               <p>{t("settings.loggedInAs")} <strong>{session.fullname}</strong>.</p>
-              <button onclick={logout} disabled={!idle}>{t("settings.logout")}</button>
+              <button onclick={logout} disabled={!canEdit}>{t("settings.logout")}</button>
             </section>
             <section class="card">
               <h2>{t("settings.folder")}</h2>
@@ -532,7 +729,7 @@
                 {#if root}<code>{root}</code>{:else}{t("settings.folderPrompt")}{/if}
               </p>
               <p class="muted">{t("settings.folderHint")}</p>
-              <button onclick={chooseRoot} disabled={!idle}>
+              <button onclick={chooseRoot} disabled={!canEdit}>
                 {root ? t("common.changeFolder") : t("common.chooseFolder")}
               </button>
             </section>
@@ -543,11 +740,20 @@
                   {settings}
                   disabled={!idle}
                   onchange={saveSettings}
-                  language={lang()}
-                  onlanguage={changeLanguage}
                 />
               </section>
             {/if}
+            <section class="card">
+              <h2>Lingua / Language</h2>
+              <select
+                value={lang()}
+                aria-label="Lingua / Language"
+                onchange={(e) => changeLanguage(e.currentTarget.value as Lang)}
+              >
+                <option value="it">Italiano</option>
+                <option value="en">English</option>
+              </select>
+            </section>
             <section class="card">
               <h2>{t("update.title")}</h2>
               <p>{t("update.current", { version: appInfo?.version ?? "?" })}</p>
@@ -569,23 +775,21 @@
           </div>
         {/if}
       </div>
+      {/key}
 
       <footer class="status">
-        {#if error}
-          <p class="error" role="alert">{error}</p>
-          {#if appInfo}
-            {@const info = appInfo}
-            {@const text = error}
-            <button class="link" onclick={() => openExternal(bugReportUrl(info, text))}>
-              {t("support.reportShort")}
-            </button>
-          {/if}
-          <button class="link" onclick={() => (error = null)}>{t("common.close")}</button>
-        {:else if busy}
-          <p class="muted" role="status">{t(busy)}</p>
+        {#if busy}
+          <span class="busy spinner" aria-hidden="true"></span>
+          <p class="busy muted" role="status">{t(busy)}</p>
+        {:else if syncRunning}
+          <span class="spinner" aria-hidden="true"></span>
+          <p class="muted" role="status">{cancelling ? t("sync.cancelling") : t(SYNC_LABEL)}</p>
         {:else if notice}
           <p class="notice" role="status">{notice}</p>
           <button class="link" onclick={() => (notice = null)}>{t("common.close")}</button>
+        {:else if doneMessage}
+          <!-- The confident end of a sync: what happened, then it fades away. -->
+          <p class="done" role="status"><Icon name="check" size={14} />{doneMessage}</p>
         {/if}
       </footer>
     </main>
@@ -595,7 +799,7 @@
     <StudyPlanDialog
       status={planStatus}
       feedback={planFeedback}
-      busy={!idle}
+      busy={!canEdit}
       onchoose={() => importPlan(api.chooseStudyPlan)}
       ondrop={(path) => importPlan(() => api.importStudyPlan(path))}
       onpaste={(text) => importPlan(() => api.importStudyPlanText(text))}
@@ -604,10 +808,10 @@
     />
   {/if}
 
-  {#if cleanups.length > 0 && !cleanupLater}
+  {#if cleanups.length > 0 && !cleanupLater && !planOpen}
     <CleanupDialog
       previews={cleanups}
-      disabled={!idle}
+      disabled={!canEdit}
       onconfirm={confirmCleanup}
       ondecline={declineCleanup}
       onlater={() => (cleanupLater = true)}
@@ -616,7 +820,7 @@
 {:else}
   <div class="welcome">
     <div class="welcome-box">
-      <img src="/logo.svg" alt="" width="72" height="72" />
+      <img class="logo" src="/logo.svg" alt="" width="72" height="72" />
       <h1>WeBeep Sync</h1>
       <p class="muted">{t("welcome.tagline")}</p>
       {#if session}
@@ -624,10 +828,12 @@
         <button class="primary big" onclick={login} disabled={!idle}>{t("welcome.login")}</button>
       {/if}
       {#if busy}
-        <p class="muted" role="status">{t(busy)}</p>
+        <p class="working muted" role="status">
+          <span class="spinner" aria-hidden="true"></span>{t(busy)}
+        </p>
       {/if}
-      {#if error}
-        <p class="error" role="alert">{error}</p>
+      {#if shownError}
+        <p class="error" role="alert">{shownError.text}</p>
       {/if}
       <p class="languages">
         <button class="link" class:current={lang() === "it"} onclick={() => changeLanguage("it")}
@@ -661,15 +867,19 @@
     display: flex;
     align-items: center;
     gap: 16px;
-    padding: 12px 24px;
-    background: var(--card);
+    /* The same height on every tab, with or without buttons. */
+    min-height: 56px;
+    box-sizing: border-box;
+    padding: 0 24px;
     border-bottom: 1px solid var(--border);
+    user-select: none;
   }
 
   .page-head h1 {
     flex: none;
     margin: 0;
-    font-size: 1.3rem;
+    font-size: 1.35rem;
+    font-weight: 650;
   }
 
   .actions {
@@ -681,16 +891,58 @@
   }
 
   .root {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    min-width: 0;
+    max-width: 420px;
+    padding: 5px 10px;
+    border-radius: var(--r-sm);
+    background: rgba(255, 255, 255, 0.04);
     color: var(--muted);
+    font-size: 0.88em;
+    user-select: text;
+  }
+
+  .root.empty {
+    color: var(--warn);
+  }
+
+  /* An error stays at the top of the page until closed, with a way to report it. */
+  .error-banner {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 16px 24px 0;
+    padding: 10px 14px;
+    border: 1px solid color-mix(in srgb, var(--danger) 45%, transparent);
+    border-radius: var(--r-md);
+    background: color-mix(in srgb, var(--danger) 10%, var(--card));
+    color: var(--danger);
+    animation: rise-in 220ms var(--ease-enter);
+  }
+
+  .error-banner .retry {
+    flex: none;
+    padding: 4px 12px;
     font-size: 0.9em;
+  }
+
+  .error-banner p {
+    flex: 1;
+    margin: 0;
+    color: var(--text);
+    overflow-wrap: anywhere;
   }
 
   .banners {
     padding: 16px 24px 0;
+    animation: rise-in 260ms var(--ease-enter);
   }
 
   .suggestion {
     border-color: var(--accent);
+    background: linear-gradient(var(--selected), var(--selected)), var(--card);
   }
 
   .suggestion p {
@@ -706,7 +958,8 @@
     flex: 1;
     min-height: 0;
     overflow-y: auto;
-    padding: 20px 24px;
+    padding: 20px 24px 28px;
+    animation: rise-in 220ms var(--ease-enter);
   }
 
   /* Pages with their own scrolling panes (the board). */
@@ -717,38 +970,50 @@
     padding: 0;
   }
 
-  .card-head {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-  }
-
-  .card-head h2 {
-    margin-bottom: 8px;
-  }
-
   .settings {
     max-width: 760px;
+  }
+
+  .settings .card p {
+    max-width: 66ch;
+  }
+
+  .settings .card > :global(button) {
+    margin-top: 4px;
   }
 
   .status {
     display: flex;
     align-items: center;
-    gap: 12px;
-    min-height: 28px;
+    gap: 10px;
+    min-height: 30px;
     padding: 0 24px;
-    background: var(--card);
+    background: var(--sidebar);
     border-top: 1px solid var(--border);
-    font-size: 0.9em;
+    font-size: 0.86em;
+    user-select: none;
   }
 
   .status p {
     flex: 1;
     margin: 0;
+    animation: fade-in 160ms var(--ease);
+  }
+
+  /* Quick actions finish before their message would flash: it appears only after 150 ms. */
+  .status .busy {
+    animation: fade-in 160ms var(--ease) 150ms both;
   }
 
   .notice {
-    color: var(--accent);
+    color: var(--ok);
+  }
+
+  .done {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--ok);
   }
 
   .error {
@@ -762,6 +1027,9 @@
     height: 100vh;
     padding: 24px;
     overflow-y: auto;
+    background:
+      radial-gradient(60% 50% at 50% 0%, color-mix(in srgb, var(--accent-strong) 14%, transparent), transparent 70%),
+      var(--bg);
   }
 
   .welcome-box {
@@ -769,32 +1037,63 @@
     text-align: center;
   }
 
+  /* The welcome arrives once: logo, name, then the rest. */
+  .welcome-box > :global(*) {
+    animation: rise-in 520ms var(--ease-enter) both;
+  }
+
+  .welcome-box > :global(:nth-child(2)) {
+    animation-delay: 60ms;
+  }
+
+  .welcome-box > :global(:nth-child(3)) {
+    animation-delay: 120ms;
+  }
+
+  .welcome-box > :global(:nth-child(n + 4)) {
+    animation-delay: 180ms;
+  }
+
+  .logo {
+    filter: drop-shadow(0 8px 24px color-mix(in srgb, var(--accent-strong) 35%, transparent));
+  }
+
   .welcome-box h1 {
-    margin: 8px 0 4px;
+    margin: 14px 0 4px;
+    font-size: 1.9rem;
+    font-weight: 650;
   }
 
   .welcome-box :global(.card) {
-    margin-top: 20px;
+    margin-top: 24px;
     text-align: left;
   }
 
+  .working {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
   .languages {
-    margin-top: 20px;
+    margin-top: 22px;
     color: var(--muted);
   }
 
   .languages .current {
-    font-weight: 700;
-    text-decoration: underline;
+    color: var(--text);
+    font-weight: 650;
+    background-size: 100% 1px;
   }
 
   button.big {
-    padding: 10px 28px;
-    font-size: 1.05rem;
+    padding: 11px 30px;
+    font-size: 1.02rem;
   }
 
   .small {
-    font-size: 0.85em;
-    margin-top: 24px;
+    font-size: 0.86em;
+    margin-top: 28px;
   }
 </style>

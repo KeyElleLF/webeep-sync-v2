@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { trapFocus } from "$lib/focus-trap";
   import type { CleanupPreview } from "$lib/api";
   import { formatBytes } from "$lib/format";
   import { t, tn } from "$lib/i18n/index.svelte";
@@ -26,6 +27,7 @@
   <div
     class="card dialog"
     role="dialog"
+    use:trapFocus
     aria-modal="true"
     aria-labelledby="cleanup-title"
     use:focusSafeButton
@@ -56,7 +58,7 @@
             </ul>
           {/if}
           <div class="buttons">
-            <button class="primary" {disabled} onclick={() => onconfirm(p, include[p.courseId] ?? false)}
+            <button class="danger" {disabled} onclick={() => onconfirm(p, include[p.courseId] ?? false)}
               >{t("cleanup.confirm")}</button
             >
             <button {disabled} onclick={() => ondecline(p)}>{t("cleanup.keep")}</button>
@@ -64,44 +66,47 @@
         {/if}
       </div>
     {/each}
-    <button class="later" {disabled} onclick={onlater}>{t("cleanup.later")}</button>
+    <div class="footer">
+      <button class="later" {disabled} onclick={onlater}>{t("cleanup.later")}</button>
+    </div>
   </div>
 </div>
 
 <style>
-  .overlay {
-    position: fixed;
-    inset: 0;
-    z-index: 10;
-    display: grid;
-    place-items: center;
-    padding: 24px;
-    background: rgba(0, 0, 0, 0.4);
-  }
-
+  /* Overlay, entrance and shadow: .overlay / .dialog in styles.css. */
   .dialog {
     width: min(640px, 100%);
-    max-height: calc(100vh - 48px);
-    overflow-y: auto;
-    box-sizing: border-box;
-    margin: 0;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+  }
+
+  .dialog h2 {
+    font-size: 1.15rem;
   }
 
   .course + .course {
     border-top: 1px solid var(--border);
-    padding-top: 8px;
+    padding-top: 10px;
+  }
+
+  .course p {
+    line-height: 1.55;
   }
 
   .modified {
     display: flex;
-    gap: 8px;
+    gap: 10px;
     align-items: center;
+    cursor: pointer;
   }
 
   ul {
-    margin: 4px 0 8px;
+    max-height: 160px;
+    overflow-y: auto;
+    margin: 6px 0 12px;
+    padding: 8px 12px 8px 28px;
+    border-radius: var(--r-md);
+    background: var(--bg);
     color: var(--muted);
+    font-size: 0.88em;
     overflow-wrap: anywhere;
   }
 
@@ -109,10 +114,15 @@
     display: flex;
     gap: 8px;
     flex-wrap: wrap;
-    margin-bottom: 8px;
+    margin-bottom: 10px;
   }
 
-  .later {
-    margin-top: 4px;
+  /* "Later" answers for every course at once, so it closes the dialog from its own row. */
+  .footer {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 6px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
   }
 </style>

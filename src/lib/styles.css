@@ -1,34 +1,65 @@
-/* Base styles shared by every component. */
+/* Base styles shared by every component: tokens, controls, motion. */
 :root {
-  /* Always dark, easy on the eyes: neutral dark greys (no tint), never pure black or white. */
-  --bg: #1e1e1e;
-  --card: #262626;
-  --sidebar: #171717;
-  --text: #e6e6e6;
-  --muted: #a6a6a6;
-  --border: #363636;
-  /* Light violet for text, links and outlines; deeper violet for filled buttons. */
-  --accent: #b69cff;
-  --accent-strong: #7c4ddb;
-  --accent-strong-hover: #6a3fca;
+  /* "Cobalt on ink": always dark, near-neutral greys with a barely cool cast, and the logo's
+     own cobalt as the one accent (Windows 11's convention: white text on a blue fill). */
+  --bg: #191b1f;
+  --sidebar: #131417;
+  --card: #24272c;
+  --raised: #2d3137;
+  --raised-hover: #363b42;
+  --border: #33373e;
+  --border-strong: #50555f;
+  /* Outlines of checkboxes, switches and fields: 3:1 on cards, so a control reads as one. */
+  --control-border: #6b717c;
+  --text: #e7e9ee;
+  --muted: #a4aab5;
+  /* Light cobalt for links, focus and selection; the logo's cobalt for filled buttons. */
+  --accent: #8db4ff;
+  --accent-strong: #2f66d9;
+  --accent-strong-hover: #3a72e6;
   --on-accent: #ffffff;
-  --danger: #ff8f8f;
-  --warn: #ffc069;
-  --hover: rgba(182, 156, 255, 0.07);
-  --selected: rgba(182, 156, 255, 0.16);
+  --danger: #ff8b85;
+  --warn: #f0c068;
+  --ok: #7dd3a1;
+  /* Derived from the tokens above, so a palette change is a change of those lines only. */
+  --hover: color-mix(in srgb, var(--accent) 7%, transparent);
+  --selected: color-mix(in srgb, var(--accent) 14%, transparent);
+  --accent-ring: color-mix(in srgb, var(--accent) 22%, transparent);
+  --border-hover: color-mix(in srgb, var(--accent) 35%, var(--border-strong));
   --sidebar-width: 220px;
+
+  /* Radii, shadows. */
+  --r-sm: 6px;
+  --r-md: 8px;
+  --r-lg: 12px;
+  --shadow-pop: 0 10px 30px rgba(0, 0, 0, 0.45), 0 2px 6px rgba(0, 0, 0, 0.3);
+  --highlight: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+
+  /* Motion: one ease-out for the UI, one for things settling in; no bounce, no overshoot. */
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-enter: cubic-bezier(0.22, 1, 0.36, 1);
+  --t-in: 150ms;
+  --t-out: 120ms;
+  --t-press: 90ms;
+  --t-panel: 200ms;
+
   /* Native scrollbars, checkboxes and menus are dark too. */
   color-scheme: dark;
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-family:
+    "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, "SF Pro Text", Roboto,
+    "Helvetica Neue", sans-serif;
   font-size: 14px;
+  line-height: 1.45;
   color: var(--text);
   accent-color: var(--accent-strong);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 /* Small windows: a narrower sidebar leaves room for the table columns. */
 @media (max-width: 1050px) {
   :root {
-    --sidebar-width: 184px;
+    --sidebar-width: 188px;
   }
 }
 
@@ -44,82 +75,396 @@ body {
   overflow: hidden;
 }
 
+h1,
+h2,
+h3 {
+  font-family:
+    "Segoe UI Variable Display", "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system,
+    sans-serif;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--accent) 35%, transparent);
+  color: #fff;
+}
+
+img {
+  -webkit-user-drag: none;
+  user-select: none;
+}
+
+/* Thin, quiet scrollbars that brighten when used; keyboard and programmatic scrolls glide (the
+   mouse wheel glides through smooth-scroll.ts). */
+* {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border: 3px solid transparent;
+  border-radius: 10px;
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--control-border);
+}
+
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* One focus ring everywhere, only for the keyboard, drawn at once. */
+:focus {
+  outline: none;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 .card {
   background: var(--card);
   border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 14px 18px;
+  border-radius: var(--r-lg);
+  padding: 16px 20px;
   margin-bottom: 16px;
 }
 
 .card h2 {
   margin-top: 0;
+  margin-bottom: 10px;
   font-size: 1.05rem;
+  font-weight: 600;
+}
+
+details > summary {
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+}
+
+details > summary::-webkit-details-marker {
+  display: none;
+}
+
+/* A small chevron that turns when the details open. */
+details > summary::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin: 0 9px 2px 2px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(-45deg);
+  transition: transform var(--t-panel) var(--ease);
+  vertical-align: middle;
+}
+
+details[open] > summary::before {
+  transform: rotate(45deg) translate(-1px, -1px);
 }
 
 details.card > summary {
-  cursor: pointer;
   color: var(--muted);
 }
 
+/* ---------- Buttons ---------- */
+
 button {
+  position: relative;
+  isolation: isolate;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   font: inherit;
-  padding: 6px 14px;
-  border-radius: 6px;
-  border: 1px solid var(--border);
-  background: var(--card);
+  font-weight: 500;
+  line-height: 1.3;
+  padding: 7px 14px;
+  border-radius: 7px;
+  border: 1px solid var(--border-strong);
+  background: var(--raised);
   color: var(--text);
   cursor: pointer;
+  white-space: nowrap;
+  user-select: none;
+  box-shadow: var(--highlight);
+  transition:
+    background-color var(--t-out) var(--ease),
+    border-color var(--t-out) var(--ease),
+    color var(--t-out) var(--ease),
+    transform var(--t-press) var(--ease);
 }
 
-button:hover:not(:disabled) {
-  border-color: var(--accent);
+/* Hover: one step lighter on the same surface, as Windows does (text links, nav entries and list
+   rows draw their own hover). */
+button:not(.link, .nav-item, .item, .open):hover:not(:disabled) {
+  background-color: var(--raised-hover);
+  border-color: var(--border-hover);
+  transition-duration: var(--t-in);
+}
+
+button:active:not(:disabled) {
+  transform: translateY(0.5px) scale(0.975);
 }
 
 button.primary {
   background: var(--accent-strong);
   border-color: var(--accent-strong);
   color: var(--on-accent);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    0 1px 2px rgba(0, 0, 0, 0.35);
 }
 
 button.primary:hover:not(:disabled) {
-  background: var(--accent-strong-hover);
+  background-color: var(--accent-strong-hover);
   border-color: var(--accent-strong-hover);
 }
 
+/* An action that removes something: outlined in red, never the most inviting button. */
+button.danger {
+  border-color: color-mix(in srgb, var(--danger) 55%, transparent);
+  background: transparent;
+  color: var(--danger);
+  box-shadow: none;
+}
+
+button.danger:hover:not(:disabled) {
+  border-color: var(--danger);
+  background-color: color-mix(in srgb, var(--danger) 12%, transparent);
+}
+
 button.link {
+  padding: 0 2px;
   border: none;
+  border-radius: 3px;
   background: none;
+  box-shadow: none;
   color: var(--accent);
-  padding: 0 4px;
+  font-weight: 500;
+  /* An underline that draws from the left on hover and leaves to the right. */
+  background-image: linear-gradient(currentColor, currentColor);
+  background-repeat: no-repeat;
+  background-position: 100% 100%;
+  background-size: 0% 1px;
+  transition:
+    background-size var(--t-out) var(--ease),
+    color var(--t-out) var(--ease);
 }
 
 button.link:hover:not(:disabled) {
-  text-decoration: underline;
+  background-position: 0 100%;
+  background-size: 100% 1px;
+  transition-duration: var(--t-in);
 }
 
+button.link:active:not(:disabled) {
+  transform: none;
+  opacity: 0.8;
+}
+
+/* Disabled stays legible: the app disables controls for the length of a sync. */
 button:disabled {
-  opacity: 0.6;
+  opacity: 0.55;
   cursor: default;
 }
 
+button.link:disabled {
+  opacity: 0.6;
+}
+
+/* ---------- Form controls ---------- */
+
 select,
-input[type="text"] {
+input[type="text"],
+textarea {
   font: inherit;
-  padding: 4px 8px;
-  border-radius: 6px;
-  border: 1px solid var(--border);
+  padding: 6px 10px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--control-border);
+  background-color: var(--bg);
+  color: var(--text);
+  transition:
+    border-color var(--t-in) var(--ease),
+    box-shadow 140ms var(--ease);
+}
+
+select {
+  appearance: none;
+  padding-right: 30px;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23a6a6a6' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 11px center;
+  text-overflow: ellipsis;
+}
+
+select option {
   background: var(--card);
   color: var(--text);
 }
 
+select:hover:not(:disabled),
+input[type="text"]:hover:not(:disabled),
+textarea:hover:not(:disabled) {
+  border-color: var(--border-hover);
+}
+
+select:focus-visible,
+input[type="text"]:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-ring);
+}
+
+select:disabled,
+input:disabled,
+textarea:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* Checkboxes: a drawn box with a tick that grows in. */
+input[type="checkbox"] {
+  appearance: none;
+  flex: none;
+  display: inline-grid;
+  place-content: center;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  border: 1.5px solid var(--control-border);
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
+  transition:
+    background-color var(--t-in) var(--ease),
+    border-color var(--t-in) var(--ease),
+    transform var(--t-press) var(--ease);
+}
+
+input[type="checkbox"]::after {
+  content: "";
+  width: 9px;
+  height: 9px;
+  background: var(--bg);
+  clip-path: polygon(14% 44%, 0 59%, 39% 98%, 100% 25%, 86% 11%, 38% 70%);
+  transform: scale(0.6);
+  opacity: 0;
+  transition:
+    transform 160ms var(--ease-enter),
+    opacity 120ms var(--ease);
+}
+
+input[type="checkbox"]:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+
+input[type="checkbox"]:active:not(:disabled) {
+  transform: scale(0.9);
+}
+
+input[type="checkbox"]:checked {
+  background: var(--text);
+  border-color: var(--text);
+}
+
+input[type="checkbox"]:checked::after {
+  transform: scale(1);
+  opacity: 1;
+}
+
+input[type="checkbox"]:checked:hover:not(:disabled) {
+  background: #ffffff;
+  border-color: var(--accent);
+}
+
+/* Settings toggles: the same checkbox drawn as a switch (Windows' convention for settings). */
+input[type="checkbox"].switch {
+  position: relative;
+  width: 34px;
+  height: 18px;
+  border-radius: 9px;
+  border-color: var(--control-border);
+}
+
+input[type="checkbox"].switch::after {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  clip-path: none;
+  background: var(--muted);
+  opacity: 1;
+  transform: none;
+  transition:
+    transform 180ms var(--ease),
+    background-color 180ms var(--ease),
+    width var(--t-press) var(--ease);
+}
+
+input[type="checkbox"].switch:active:not(:disabled) {
+  transform: none;
+}
+
+input[type="checkbox"].switch:checked {
+  background: var(--accent-strong);
+  border-color: var(--accent-strong);
+}
+
+input[type="checkbox"].switch:checked:hover:not(:disabled) {
+  background: var(--accent-strong-hover);
+}
+
+input[type="checkbox"].switch:checked::after {
+  background: var(--on-accent);
+  transform: translateX(16px);
+}
+
 code {
-  font-size: 0.9em;
+  font-family: "Cascadia Code", Consolas, ui-monospace, monospace;
+  font-size: 0.88em;
   word-break: break-all;
 }
 
 .muted {
   color: var(--muted);
+}
+
+/* WeBeep sends course names in capitals: small caps keep their shape without shouting, the same
+   way on every tab. */
+.course-name {
+  font-variant-caps: all-small-caps;
+  /* Small caps are as tall as lowercase letters: a step up keeps them as readable as the text. */
+  font-size: 1.12em;
+  letter-spacing: 0.03em;
+}
+
+/* Read by screen readers, not shown. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 /* One-line text that truncates with an ellipsis (the full text goes in `title`). */
@@ -141,4 +486,98 @@ code {
   font-weight: 600;
   line-height: 18px;
   text-align: center;
+  font-variant-numeric: tabular-nums;
+  box-sizing: border-box;
+  animation: pop 260ms var(--ease-enter);
+}
+
+/* Small spinner for "working" states. */
+.spinner {
+  flex: none;
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border: 1.5px solid var(--accent-ring);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+/* ---------- Dialogs ---------- */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(10, 10, 10, 0.55);
+  backdrop-filter: blur(3px);
+  animation: fade-in var(--t-panel) var(--ease);
+}
+
+.overlay > .dialog {
+  box-sizing: border-box;
+  max-height: calc(100vh - 48px);
+  margin: 0;
+  overflow-y: auto;
+  padding: 22px 24px;
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-pop);
+  animation: dialog-in 260ms var(--ease-enter);
+}
+
+/* ---------- Keyframes ---------- */
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pop {
+  from {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+@keyframes dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+}
+
+/* Everything rests for people who ask for less motion (states still change, at once). */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    transition-delay: 0ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .spinner {
+    animation: none;
+    border-color: var(--accent);
+    border-top-color: transparent;
+  }
 }

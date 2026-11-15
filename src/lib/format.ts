@@ -37,6 +37,11 @@ export function semesterLabel(guess: SemesterGuess | null): string {
   });
 }
 
+/** What the course list shows next to a course about the last sync. */
+export type RowStatus =
+  | { kind: "done"; added: number; files: string[] }
+  | { kind: "error"; message: string };
+
 /** Courses that are synced and shown in the board and in the links. */
 export const ACTIVE_STATES: CourseState[] = ["current", "upcoming", "examPending"];
 

@@ -150,10 +150,16 @@ export interface SyncProgress {
   index: number;
   total: number;
   name: string;
+  /** Files transferred / to transfer in the current course (0 / 0 until its plan is known). */
+  filesDone: number;
+  filesTotal: number;
 }
 
 export const SYNC_PROGRESS_EVENT = "sync-progress";
 export const SYNC_FINISHED_EVENT = "sync-finished";
+export const SYNC_STARTED_EVENT = "sync-started";
+/** Payload: `{ message }`, the error of the sync. */
+export const SYNC_FAILED_EVENT = "sync-failed";
 export const ANNOUNCEMENTS_EVENT = "announcements-updated";
 
 export interface Attachment {
@@ -256,6 +262,8 @@ export const api = {
   lastSync: () => call<number | null>("last_sync"),
   setSettings: (settings: Settings) => call<Settings>("set_settings", { settings }),
   syncNow: () => call<CourseSummary[]>("sync_now"),
+  /** Stops the running sync after the downloads in progress; it returns the courses done. */
+  cancelSync: () => call<void>("cancel_sync"),
   listAnnouncements: () => call<Announcement[]>("list_announcements"),
   refreshAnnouncements: () => call<Announcement[]>("refresh_announcements"),
   markAnnouncementsRead: (id: number | null) => call<void>("mark_announcements_read", { id }),

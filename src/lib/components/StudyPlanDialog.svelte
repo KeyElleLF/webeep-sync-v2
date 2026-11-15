@@ -6,6 +6,7 @@
 </script>
 
 <script lang="ts">
+  import { trapFocus } from "$lib/focus-trap";
   import { onMount } from "svelte";
   import { getCurrentWebview } from "@tauri-apps/api/webview";
   import type { PlanStatus } from "$lib/api";
@@ -57,7 +58,8 @@
 <svelte:window onkeydown={(e) => e.key === "Escape" && !busy && onclose()} />
 
 <div class="overlay">
-  <div class="card dialog" role="dialog" aria-modal="true" aria-labelledby="plan-title">
+  <div class="card dialog" role="dialog"
+    use:trapFocus aria-modal="true" aria-labelledby="plan-title">
     <header>
       <h2 id="plan-title">{t("plan.title")}</h2>
       <button class="link" onclick={onclose} disabled={busy} use:focusClose
@@ -125,23 +127,9 @@
 </div>
 
 <style>
-  .overlay {
-    position: fixed;
-    inset: 0;
-    z-index: 10;
-    display: grid;
-    place-items: center;
-    padding: 24px;
-    background: rgba(0, 0, 0, 0.5);
-  }
-
+  /* Overlay, entrance and shadow: .overlay / .dialog in styles.css. */
   .dialog {
     width: min(600px, 100%);
-    max-height: calc(100vh - 48px);
-    overflow-y: auto;
-    box-sizing: border-box;
-    margin: 0;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
   }
 
   header {
@@ -152,11 +140,16 @@
 
   header h2 {
     margin: 0;
+    font-size: 1.15rem;
   }
 
   .loaded {
-    padding: 8px 12px;
-    border-radius: 6px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px 10px;
+    padding: 9px 12px;
+    border-radius: var(--r-md);
     background: var(--selected);
   }
 
@@ -164,19 +157,28 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 6px;
-    padding: 28px 16px;
-    border: 2px dashed var(--border);
-    border-radius: 10px;
+    gap: 8px;
+    padding: 30px 16px;
+    border: 1.5px dashed var(--border-strong);
+    border-radius: var(--r-lg);
+    background: var(--bg);
     text-align: center;
     transition:
-      border-color 0.15s,
-      background 0.15s;
+      border-color var(--t-in) var(--ease),
+      background-color var(--t-in) var(--ease),
+      transform var(--t-panel) var(--ease);
   }
 
+  /* A file held over the window: the zone lights up and leans in. */
   .drop.dragging {
     border-color: var(--accent);
-    background: var(--hover);
+    border-style: solid;
+    background: var(--selected);
+    transform: scale(1.01);
+  }
+
+  .drop button {
+    margin-top: 6px;
   }
 
   .drop p {
@@ -204,13 +206,8 @@
   }
 
   textarea {
-    font: inherit;
     font-size: 0.9em;
-    padding: 8px;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    background: var(--bg);
-    color: var(--text);
+    padding: 9px 10px;
     resize: vertical;
   }
 
@@ -234,7 +231,7 @@
   }
 
   .ok {
-    color: var(--accent);
+    color: var(--ok);
   }
 
   .error {

@@ -1,16 +1,14 @@
 <script lang="ts">
   import type { Settings } from "$lib/api";
-  import { t, type Lang, type MessageKey } from "$lib/i18n/index.svelte";
+  import { t, type MessageKey } from "$lib/i18n/index.svelte";
 
   interface Props {
     settings: Settings;
     disabled: boolean;
     onchange: (settings: Settings) => void;
-    language: Lang;
-    onlanguage: (lang: Lang) => void;
   }
 
-  let { settings, disabled, onchange, language, onlanguage }: Props = $props();
+  let { settings, disabled, onchange }: Props = $props();
   const CONCURRENCY_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8];
   const INTERVALS: { minutes: number; label: MessageKey }[] = [
     { minutes: 30, label: "settings.interval.30" },
@@ -23,22 +21,11 @@
   const RECOMMENDED_CONCURRENCY = 4;
 </script>
 
-<label class="row">
-  <span>Lingua / Language</span>
-  <select
-    value={language}
-    {disabled}
-    onchange={(e) => onlanguage(e.currentTarget.value as Lang)}
-  >
-    <option value="it">Italiano</option>
-    <option value="en">English</option>
-  </select>
-</label>
-
 <h3>{t("settings.whileOpen")}</h3>
 <label class="row">
   <input
     type="checkbox"
+    class="switch"
     checked={settings.autosync}
     {disabled}
     onchange={(e) => onchange({ ...settings, autosync: e.currentTarget.checked })}
@@ -58,6 +45,7 @@
 <label class="row">
   <input
     type="checkbox"
+    class="switch"
     checked={settings.notifications}
     {disabled}
     onchange={(e) => onchange({ ...settings, notifications: e.currentTarget.checked })}
@@ -87,6 +75,7 @@
 <label class="row">
   <input
     type="checkbox"
+    class="switch"
     checked={settings.flattenMaterials}
     {disabled}
     onchange={(e) => onchange({ ...settings, flattenMaterials: e.currentTarget.checked })}
@@ -116,33 +105,44 @@
 
 <style>
   h3 {
-    font-size: 1rem;
-    margin: 18px 0 0;
+    margin: 22px 0 0;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
   }
 
-  h3:first-child {
-    margin-top: 0;
+  /* The first section sits right under the card title. */
+  h3:first-of-type {
+    margin-top: 6px;
+    padding-top: 0;
+    border-top: none;
   }
 
   .row {
     display: flex;
-    gap: 10px;
+    gap: 12px;
     align-items: center;
     margin-top: 12px;
+    cursor: pointer;
   }
 
-  select {
-    font: inherit;
-    padding: 4px 8px;
-    border-radius: 6px;
-    border: 1px solid var(--border);
-    background: var(--card);
-    color: var(--text);
+  .row select {
+    padding-block: 5px;
   }
 
   .muted {
     color: var(--muted);
-    margin: 4px 0 0;
-    font-size: 0.9em;
+    margin: 5px 0 0;
+    font-size: 0.86em;
+    line-height: 1.5;
+  }
+
+  /* Hints line up with the text after a switch. */
+  .row:has(.switch) + .muted {
+    padding-left: 46px;
   }
 </style>

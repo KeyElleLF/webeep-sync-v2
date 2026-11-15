@@ -56,13 +56,72 @@ logica di sync e corsi.
   finestre; le notifiche usano `pick()`. **Quando si aggiunge un messaggio**: chiave in `it.ts` e
   `en.ts`, oppure riga nella tabella `EN` (un test controlla che ogni riga si traduca). I nomi
   delle copie di conflitto sul disco («WeBeep aggiornato») restano in italiano.
-- **Interfaccia sempre scura con accento viola** (2026-11-12), indipendente dal tema di Windows:
-  palette in `src/lib/styles.css` (`--accent` viola chiaro per testo e link, `--accent-strong` per
-  i pulsanti pieni con testo bianco, contrasto ≥ 5:1), `color-scheme: dark`, finestra con
-  `"theme": "Dark"` e `backgroundColor` in `tauri.conf.json`. Niente tema chiaro. **Sfondi grigio
-  scuro neutro, senza sfumatura viola** (richiesta dell'utente del 2026-11-13: `--bg` `#1e1e1e`,
-  riquadri `#262626`, barra laterale `#171717`, bordi `#363636`, testo neutro); il viola resta solo
-  negli accenti (pulsanti, badge, link, selezione).
+- **Interfaccia sempre scura, palette «Cobalto su inchiostro»** (scelta dell'utente del
+  2026-11-15, dopo la critica di impeccable e il confronto con le palette della taste skill; sostituisce
+  il viola del 2026-11-12/13), indipendente dal tema di Windows. Grigi quasi neutri con un velo freddo
+  (`--bg` `#191b1f`, barra laterale `#131417`, riquadri `#24272c`, `--raised` `#2d3137`, bordi
+  `#33373e`/`#50555f`, `--control-border` `#6b717c` = 3:1 per checkbox, switch e campi) e come unico
+  accento il cobalto del logo: `--accent` `#8db4ff` per link, focus e selezione, `--accent-strong`
+  `#2f66d9` per i bottoni pieni con testo bianco (5,2:1), hover un gradino più chiaro (`#3a72e6`),
+  mai inversione. Le tinte (`--hover`, `--selected`, `--accent-ring`, `--border-hover`) derivano
+  dall'accento con `color-mix`: **cambiare palette = cambiare le righe dei token in `styles.css`**.
+  Regole: checkbox spuntate in grigio chiaro (il colore segna le eccezioni, non lo stato normale),
+  titoli dei link in bianco con l'accento solo su hover, puntina in grigio, una sola tinta d'urgenza
+  per scadenza più la parola «Scaduta», azioni distruttive in `button.danger` (contorno rosso), mai
+  il bottone pieno. `color-scheme: dark`, `"theme": "Dark"` in `tauri.conf.json`. Niente tema
+  chiaro, niente viola.
+- **Rifinitura estetica e movimento** (2026-11-15, richiesta dell'utente; nessuna funzione cambiata):
+  token in `src/lib/styles.css` (raggi `--r-*`, `--ease`/`--ease-enter`, tempi `--t-in` 150 ms,
+  `--t-out` 120 ms, `--t-press` 90 ms), anello di focus unico (`:focus-visible`), checkbox disegnate,
+  `.switch` per le impostazioni, select con freccia propria, barre di scorrimento sottili, dialoghi
+  su `.overlay`/`.dialog` globali, icone SVG proprie in `components/Icon.svelte` (nessuna libreria).
+  **Effetto pixel** (ispirato al bottone di Noomo Agency): **solo come avanzamento del sync**, dentro
+  «Sincronizza ora» (`Sidebar.svelte`, griglia 28×5, celle accese in proporzione a corso/totale, da
+  sinistra con bordo irregolare); gli altri bottoni hanno solo un hover più chiaro. Errori: `shownError`
+  in `+page.svelte` resta in un banner rosso in cima alla pagina finché non si chiude (o finché un sync
+  riesce); `error` resta per-azione per i controlli `if (error)`. Righe dei corsi: spinner sul corso in
+  sincronizzazione (per nome, da `sync-progress`), «+N» o ⚠ dall'ultimo sync (`results`, `RowStatus`
+  in `format.ts`), cartella mostrata solo se diversa dal nome, «Superato/Ignora» visibili sulla riga
+  sotto il mouse o col fuoco, nomi in maiuscoletto. Intestazione di pagina sempre alta 56 px; il
+  contenuto si ricrea a ogni scheda (`{#key tab}`). Niente animazioni legate allo scorrimento.
+  **Scorrimento fluido** (`src/lib/smooth-scroll.ts`, installato in `+page.svelte`): solo per gli
+  scatti della rotellina del mouse, nel pannello sotto il puntatore (con passaggio al pannello padre ai
+  bordi); touchpad, Ctrl+rotellina, Maiusc e «riduci animazioni» restano nativi; tastiera e scroll da
+  codice con `scroll-behavior: smooth`. **Riepilogo del sync** (`SyncSummary.svelte`): striscia
+  compatta con i soli totali non nulli e «Dettagli» per corso (nomi dei file, conflitti, file tolti dal
+  docente, errori, link **appena aggiunti** dal docente: non tutti i link del corso, che stanno
+  nella scheda Link); non compare se il sync non ha portato novità.
+- **Seconda critica di impeccable** (2026-11-15, 26/40; interventi scelti dall'utente):
+  - **Sync con stato proprio**: in `+page.svelte` `syncRequested` + `progress` (`syncRunning`), non
+    più il `busy` condiviso di `run()` (che si azzerava aprendo un avviso a metà sync). `canEdit`
+    blocca durante il sync solo ciò che lo tocca (corsi, cartelle, semestre, piano, Cestino);
+    Bacheca, Link e Scadenze restano usabili.
+    Ogni sync (anche automatico) manda `sync-started` e poi `sync-finished` o `sync-failed`
+    (con `{ message }`): l'interfaccia non resta mai «in sincronizzazione» dopo un errore. Le
+    azioni che devono sapere se sono riuscite usano `attempt()` (esito proprio), non la variabile
+    globale `error`, che un sync fallito nel frattempo potrebbe aver impostato.
+  - **Annulla** (backend): `cancel_sync` imposta `AppState.cancel` (azzerato all'inizio di ogni
+    sync); `sync_all` si ferma prima del corso successivo, `execute` non avvia i download non
+    ancora partiti (`Done::Cancelled`, né errore né baseline) e lascia finire quelli in corso.
+    Avanzamento per file: `FileProgress` (fatti/totale del corso) nell'evento `sync-progress`
+    (`filesDone`, `filesTotal`); la barra a pixel conta anche la frazione di file.
+  - **Fine del sync**: spunta nel bottone e messaggio verde nella barra di stato per 8 s
+    («Tutto aggiornato · N corsi controllati», «… file nuovi o aggiornati», «annullata»).
+  - **Errori**: `shownError` dice cosa è fallito (`FAILURES`: titolo, «Riprova», scheda
+    d'origine); il banner compare solo su quella scheda, con un pallino rosso sulla voce del menu
+    quando si è altrove.
+  - **Righe dei corsi**: semestre come testo («1° · dal piano») con «Cambia» che apre la scelta,
+    «Non noto: scegli» al posto di «Auto: ?»; «+N» e ⚠ sono pulsanti che aprono sotto la riga i
+    file arrivati o il motivo dell'errore, con «Apri cartella del corso»; «Superato» sempre
+    visibile negli esami in sospeso; «N corsi da sincronizzare».
+  - **Coerenza e tastiera**: `.course-name` (maiuscoletto) per i nomi dei corsi ovunque; «Aggiorna»
+    in Bacheca e Scadenze; un solo bottone pieno per schermata; righe delle scadenze cliccabili con
+    tempo relativo; filtri e selezione conservati tra le schede (`src/lib/view-state.svelte.ts`);
+    fuoco intrappolato nei dialoghi (`src/lib/focus-trap.ts`); scorciatoie Ctrl+R/F5 (sync, al
+    posto del ricaricamento della finestra) e Ctrl+1…5 (schede), indicate nei tooltip; scheda
+    «Lingua / Language» separata nelle Impostazioni.
+  Anteprima senza account: `fixtures/raw/ui-mock.js` (gitignored). Critica salvata in
+  `.impeccable/critique/` (27/40 prima di queste modifiche).
 - La v1 e i dati dell'utente: cartella di sync della v1 in `CLAUDE.local.md`. La prima prova reale
   è stata fatta in una cartella nuova; l'adozione dei file della v1 è verificata solo offline
   (76 file su 76 hanno dimensione e mtime uguali a WeBeep).
@@ -583,7 +642,12 @@ La pulizia parte solo dopo questa conferma, poi segue il flusso sopra.
   - cambiati entrambi: salva il remoto come `nome (WeBeep aggiornato YYYY-MM-DD).ext` e
     segnala un conflitto nel riepilogo. **Mai sovrascrivere in silenzio.**
 - **Download atomico:** scrivi in `*.part`, poi rinomina. Imposta `mtime = timemodified`.
-- **File rimosso dal docente:** non cancellare in locale, segnalalo. L'unico caso in cui l'app
+- **File rimosso dal docente:** non cancellare in locale, segnalalo. *(Dal 2026-11-15 lo si segnala
+  **una sola volta**: dopo il sync che lo trova, la sua riga della baseline viene tolta
+  (`CourseOutcome.forgotten` → `forget_baseline`), così la copia diventa dell'utente: non viene più
+  segnalata né spostata nel Cestino dalla pulizia dei corsi superati. Se il docente lo ripubblica
+  identico viene adottato; se è diverso, vale la regola dei file locali non tracciati: copia di
+  conflitto, mai sovrascritto.)* L'unico caso in cui l'app
   elimina file è la pulizia dei corsi superati (§6.5), sempre confermata dall'utente.
 - **Concorrenza limitata** (semaforo `tokio`, default 4, configurabile, massimo 8) per non stressare WeBeep.
 - **Isolamento per corso:** il fallimento di un corso non ferma gli altri.

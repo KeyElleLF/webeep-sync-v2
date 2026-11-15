@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { CourseLink, LinkKind } from "$lib/api";
   import { displayName, t, type MessageKey } from "$lib/i18n/index.svelte";
+  import Icon from "./Icon.svelte";
 
   interface Props {
     /** Links of the courses being synced. */
@@ -52,7 +53,7 @@
 <p class="hint">{t("links.hint")}</p>
 
 {#if courses.length === 0}
-  <p class="muted">{t("links.empty")}</p>
+  <p class="empty"><Icon name="links" size={18} />{t("links.empty")}</p>
 {/if}
 
 <div class="grid">
@@ -76,9 +77,9 @@
 {#snippet card(course: (typeof courses)[number])}
   <section class="card course">
     <header>
-      <h2>{course.name}</h2>
+      <h2 class="course-name">{course.name}</h2>
       <button class="small" {disabled} onclick={() => onfolder(course.id)}>
-        {t("links.openFolder")}
+        <Icon name="folder" size={14} />{t("links.openFolder")}
       </button>
     </header>
 
@@ -90,6 +91,7 @@
             <li>
               <button class="open" title={link.url} onclick={() => onopen(link)}>
                 <span class="name">{displayName(link.name)}</span>
+                <Icon name="external" size={13} class="arrow" />
                 {#if !link.seen}<span class="badge">{t("links.new")}</span>{/if}
               </button>
               <span class="where ellipsis" title="{displayName(link.section)} · {link.url}">
@@ -105,21 +107,33 @@
 
 <style>
   .hint {
-    margin: 0 0 16px;
+    margin: 0 0 18px;
     color: var(--muted);
-    font-size: 0.9em;
-    max-width: 90ch;
+    font-size: 0.88em;
+    max-width: 66ch;
+  }
+
+  .empty {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--muted);
   }
 
   .later {
-    margin-top: 24px;
+    margin-top: 28px;
   }
 
   .later > summary {
-    cursor: pointer;
-    margin-bottom: 8px;
+    width: fit-content;
+    margin-bottom: 10px;
     color: var(--muted);
     font-weight: 600;
+    transition: color var(--t-out) var(--ease);
+  }
+
+  .later > summary:hover {
+    color: var(--text);
   }
 
   .grid {
@@ -131,6 +145,13 @@
 
   .course {
     margin: 0;
+    padding: 16px 18px 12px;
+    transition: border-color var(--t-out) var(--ease);
+  }
+
+  .course:hover {
+    border-color: var(--border-strong);
+    transition-duration: var(--t-in);
   }
 
   header {
@@ -138,17 +159,21 @@
     justify-content: space-between;
     align-items: center;
     gap: 12px;
-    margin-bottom: 8px;
+    margin-bottom: 10px;
   }
 
+  /* Small caps (shared .course-name) are as tall as lowercase letters: a larger size keeps
+     the course name the strongest line of the card. */
   header h2 {
     margin: 0;
+    font-size: 1.28rem;
+    font-weight: 650;
   }
 
   button.small {
     flex: none;
-    padding: 3px 10px;
-    font-size: 0.85em;
+    padding: 4px 10px;
+    font-size: 0.84em;
   }
 
   details + details {
@@ -156,55 +181,108 @@
   }
 
   summary {
-    cursor: pointer;
+    width: fit-content;
     padding: 4px 0;
     color: var(--muted);
-    font-size: 0.9em;
+    font-size: 0.86em;
     font-weight: 600;
+    transition: color var(--t-out) var(--ease);
+  }
+
+  summary:hover {
+    color: var(--text);
+  }
+
+  /* How many links a group holds matters while it is closed; once open, the list says it. */
+  details[open] > summary .count {
+    display: none;
   }
 
   .count {
-    font-weight: 400;
+    display: inline-block;
+    min-width: 16px;
+    margin-left: 4px;
+    padding: 0 5px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.07);
+    font-size: 0.9em;
+    line-height: 16px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
   }
 
   ul {
     list-style: none;
-    margin: 0 0 4px;
+    margin: 2px 0 6px;
     padding: 0;
   }
 
   li {
     display: flex;
     flex-direction: column;
-    padding: 5px 0 5px 12px;
-    border-left: 2px solid var(--border);
+    gap: 1px;
+    margin-left: -8px;
+    padding: 6px 8px;
+    border-radius: var(--r-md);
+    transition: background-color var(--t-out) var(--ease);
   }
 
   li:hover {
-    border-left-color: var(--accent);
+    background: rgba(255, 255, 255, 0.035);
+    transition-duration: var(--t-in);
   }
 
   .open {
-    display: flex;
-    align-items: center;
-    gap: 8px;
+    justify-content: flex-start;
+    gap: 6px;
     padding: 0;
     border: none;
     background: none;
-    color: var(--accent);
+    box-shadow: none;
+    color: var(--text);
     text-align: left;
+    white-space: normal;
   }
 
-  .open:hover .name {
-    text-decoration: underline;
+  /* On a page of links, colour marks the one under the pointer, not every title. */
+  .open:hover:not(:disabled),
+  .open:focus-visible {
+    background: none;
+    color: var(--accent);
+  }
+
+  .open :global(.arrow) {
+    color: var(--accent);
+    opacity: 0.55;
+    transition:
+      transform var(--t-out) var(--ease),
+      opacity var(--t-out) var(--ease);
+  }
+
+  .open:hover :global(.arrow),
+  .open:focus-visible :global(.arrow) {
+    opacity: 1;
+    transform: translate(2px, -2px);
+    transition-duration: var(--t-in);
   }
 
   .name {
     font-weight: 600;
+    background-image: linear-gradient(currentColor, currentColor);
+    background-repeat: no-repeat;
+    background-position: 100% 100%;
+    background-size: 0% 1px;
+    transition: background-size var(--t-out) var(--ease);
+  }
+
+  .open:hover .name {
+    background-position: 0 100%;
+    background-size: 100% 1px;
+    transition-duration: var(--t-in);
   }
 
   .where {
     color: var(--muted);
-    font-size: 0.85em;
+    font-size: 0.86em;
   }
 </style>

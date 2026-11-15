@@ -1,9 +1,10 @@
 <script lang="ts">
   import type { CourseRow, ManualState } from "$lib/api";
-  import { SECTIONS } from "$lib/format";
+  import { SECTIONS, type RowStatus } from "$lib/format";
   import { t, tn } from "$lib/i18n/index.svelte";
   import CourseItem from "./CourseItem.svelte";
   import InfoTip from "./InfoTip.svelte";
+  import { view } from "$lib/view-state.svelte";
 
   interface Props {
     courses: CourseRow[];
@@ -15,11 +16,26 @@
     /** A study plan is loaded. */
     planLoaded: boolean;
     onplan: () => void;
+    /** Outcome of the last sync per course id. */
+    results: Map<number, RowStatus>;
+    /** Name of the course being synced right now. */
+    syncingName: string | null;
+    onfolder: (courseId: number) => void;
   }
 
-  let { courses, disabled, ontoggle, onrename, onstate, onsemester, planLoaded, onplan }: Props =
-    $props();
-  let showAll = $state(false);
+  let {
+    courses,
+    disabled,
+    ontoggle,
+    onrename,
+    onstate,
+    onsemester,
+    planLoaded,
+    onplan,
+    results,
+    syncingName,
+    onfolder,
+  }: Props = $props();
 
   const groups = $derived(
     SECTIONS.map((section) => ({
@@ -32,7 +48,7 @@
         ),
     })).filter((g) => g.courses.length > 0),
   );
-  const visible = $derived(groups.filter((g) => !g.extra || showAll));
+  const visible = $derived(groups.filter((g) => !g.extra || view.showAllCourses));
   const hiddenCount = $derived(
     groups.filter((g) => g.extra).reduce((n, g) => n + g.courses.length, 0),
   );
@@ -45,7 +61,7 @@
 </script>
 
 <div class="bar">
-  <span><strong>{selectedCount}</strong> {tn("courses.selected", selectedCount)}</span>
+  <span class="selected"><strong>{selectedCount}</strong> {tn("courses.selected", selectedCount)}</span>
   <span class="plan">
     <button class="small" {disabled} onclick={onplan}>
       {planLoaded ? t("plan.loadedButton") : t("plan.importButton")}
@@ -53,7 +69,7 @@
     <InfoTip text={t("plan.info")} label={t("plan.infoLabel")} />
   </span>
   <label>
-    <input type="checkbox" bind:checked={showAll} />
+    <input type="checkbox" bind:checked={view.showAllCourses} />
     {t("courses.showAll")}{#if hiddenCount > 0}&nbsp;({hiddenCount}){/if}
   </label>
 </div>
@@ -69,11 +85,11 @@
   </div>
 
   {#each visible as group (group.title)}
-    <h3>
+    <h2>
       {t(group.title)}
       <span class="count">{group.courses.length}</span>
       <span class="group-hint">{t(group.hint)}</span>
-    </h3>
+    </h2>
     <ul>
       {#each group.courses as course (course.id)}
         <CourseItem
@@ -84,6 +100,9 @@
           {onrename}
           {onstate}
           {onsemester}
+          {onfolder}
+          status={results.get(course.id) ?? null}
+          syncing={course.selected && course.name === syncingName}
         />
       {/each}
     </ul>
@@ -97,6 +116,14 @@
     justify-content: space-between;
     align-items: center;
     gap: 8px 16px;
+  }
+
+  .selected {
+    font-size: 1.02em;
+  }
+
+  .selected strong {
+    font-variant-numeric: tabular-nums;
   }
 
   .plan {
@@ -113,67 +140,95 @@
 
   .bar label {
     display: flex;
-    gap: 6px;
+    gap: 8px;
     align-items: center;
     color: var(--muted);
+    cursor: pointer;
+    user-select: none;
+    transition: color var(--t-out) var(--ease);
+  }
+
+  .bar label:hover {
+    color: var(--text);
   }
 
   .hint {
-    margin: 4px 0 16px;
+    margin: 6px 0 16px;
     color: var(--muted);
-    font-size: 0.9em;
+    font-size: 0.88em;
+    max-width: 110ch;
   }
 
   .table {
     /* Shared by every row (CourseItem uses it too), so the columns line up. */
-    --course-cols: 32px minmax(0, 5fr) 160px minmax(0, 4fr) 150px;
+    --course-cols: 32px minmax(0, 6fr) minmax(170px, 2fr) minmax(0, 3fr) 140px;
     background: var(--card);
     border: 1px solid var(--border);
-    border-radius: 8px;
-    overflow: hidden;
+    border-radius: var(--r-lg);
+    /* Clip, not hidden: the column header can then stick to the top while scrolling. */
+    overflow: clip;
   }
 
   @media (max-width: 1050px) {
     .table {
-      --course-cols: 28px minmax(0, 5fr) 130px minmax(0, 3fr) 130px;
+      --course-cols: 28px minmax(0, 5fr) minmax(150px, 2fr) minmax(150px, 2fr) 112px;
     }
   }
 
   .head {
+    position: sticky;
+    top: -20px;
+    z-index: 1;
     display: grid;
     grid-template-columns: var(--course-cols);
     gap: 12px;
-    padding: 8px 12px;
+    padding: 9px 12px;
     color: var(--muted);
-    font-size: 0.85em;
+    font-size: 0.8em;
     font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    background: var(--card);
     border-bottom: 1px solid var(--border);
+    user-select: none;
   }
 
-  h3 {
+  h2 {
     display: flex;
     align-items: baseline;
     gap: 8px;
     margin: 0;
-    padding: 10px 12px 6px;
-    font-size: 0.95rem;
-    background: var(--bg);
+    padding: 12px 12px 7px;
+    font-size: 0.92rem;
+    font-weight: 600;
+    background: rgba(0, 0, 0, 0.14);
     border-bottom: 1px solid var(--border);
+    user-select: none;
   }
 
-  ul + h3 {
+  ul + h2 {
     border-top: 1px solid var(--border);
   }
 
   .count {
+    display: inline-block;
+    min-width: 18px;
+    padding: 0 6px;
+    border-radius: 9px;
+    background: rgba(255, 255, 255, 0.07);
     color: var(--muted);
-    font-weight: 400;
+    font-size: 0.86em;
+    font-weight: 600;
+    line-height: 18px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
   }
 
   .group-hint {
     color: var(--muted);
-    font-size: 0.85em;
+    font-size: 0.95em;
     font-weight: 400;
+    letter-spacing: 0;
   }
 
   ul {
