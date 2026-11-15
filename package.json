@@ -1,6 +1,6 @@
 {
   "name": "webeep-sync-v2",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Client desktop non ufficiale per sincronizzare il materiale di WeBeep",
   "type": "module",
   "scripts": {
