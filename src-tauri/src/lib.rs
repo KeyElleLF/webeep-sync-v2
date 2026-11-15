@@ -62,6 +62,7 @@ pub fn run() {
             commands::settings::get_language,
             commands::settings::set_language,
             commands::sync::sync_now,
+            commands::sync::cancel_sync,
             commands::teaching::set_teaching_state,
             commands::teaching::set_teaching_semester,
             commands::teaching::dismiss_suggestion,

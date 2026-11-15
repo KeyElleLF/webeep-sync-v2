@@ -1,8 +1,8 @@
 //! Application state shared by the Tauri commands.
 
 use std::error::Error;
-use std::sync::Mutex;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, Mutex};
 
 use tauri::{AppHandle, Manager};
 
@@ -13,6 +13,8 @@ const DATABASE_FILE: &str = "webeep-sync.sqlite";
 pub struct AppState {
     pub store: Mutex<Store>,
     syncing: AtomicBool,
+    /// "Annulla" of the running sync; cleared when a new one starts.
+    pub cancel: Arc<AtomicBool>,
 }
 
 impl AppState {
@@ -23,6 +25,7 @@ impl AppState {
         Ok(Self {
             store: Mutex::new(Store::open(&dir.join(DATABASE_FILE))?),
             syncing: AtomicBool::new(false),
+            cancel: Arc::new(AtomicBool::new(false)),
         })
     }
 
@@ -30,6 +33,13 @@ impl AppState {
     pub fn begin_sync(&self) -> Option<SyncGuard<'_>> {
         let already = self.syncing.swap(true, Ordering::AcqRel);
         (!already).then_some(SyncGuard(&self.syncing))
+    }
+
+    /// Asks the running sync, if any, to stop: no new course or download starts.
+    pub fn cancel_sync(&self) {
+        if self.syncing.load(Ordering::Acquire) {
+            self.cancel.store(true, Ordering::Release);
+        }
     }
 }
 

@@ -3,6 +3,7 @@
 //! invalid token stops everything, since every later call would fail too.
 
 use std::path::Path;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 
 use chrono::NaiveDate;
@@ -18,7 +19,7 @@ use crate::moodle::types::{Assignment, AssignmentsResponse, CourseSection};
 use crate::store::{Store, StoreError};
 use crate::sync::assign::with_assignment_files;
 use crate::sync::download::Fetcher;
-use crate::sync::execute::{CourseReport, CourseRun};
+use crate::sync::execute::{CourseReport, CourseRun, FileProgress};
 use crate::sync::local::{safe_join, snapshot};
 use crate::sync::plan::plan;
 use crate::sync::tree::{ExternalLink, TreeOptions, build_tree};
@@ -61,6 +62,9 @@ pub struct SyncContext<'a> {
     /// Unix seconds, for when a link was first seen.
     pub now: i64,
     pub options: TreeOptions,
+    /// Set by "Annulla": no new course and no new download starts.
+    pub cancel: Arc<AtomicBool>,
+    pub on_files: Option<&'a FileProgress<'a>>,
 }
 
 /// A course to sync together with its (already assigned) folder.
@@ -70,7 +74,8 @@ pub struct CourseJob<'a> {
 }
 
 impl SyncContext<'_> {
-    /// Syncs `jobs` in order, calling `on_course` before each one.
+    /// Syncs `jobs` in order, calling `on_course` before each one. After a cancel it returns
+    /// the courses done so far.
     pub async fn sync_all(
         &self,
         jobs: &[CourseJob<'_>],
@@ -79,6 +84,10 @@ impl SyncContext<'_> {
         let assignments = self.assignments(jobs).await?;
         let mut summaries = Vec::with_capacity(jobs.len());
         for (index, job) in jobs.iter().enumerate() {
+            if self.cancel.load(Ordering::Acquire) {
+                tracing::info!("sync cancelled after {index} courses");
+                break;
+            }
             on_course(index, job.course);
             let summary = match self.sync_course(job, &assignments).await {
                 Ok(summary) => summary,
@@ -146,9 +155,14 @@ impl SyncContext<'_> {
             root: &course_root,
             remote: &tree.files,
             baseline: &baseline,
+            cancel: Arc::clone(&self.cancel),
+            on_files: self.on_files,
         };
         let outcome = run.execute(actions).await;
         self.with_store(|store| store.save_baseline(course_id, &outcome.baseline))?;
+        if !outcome.forgotten.is_empty() {
+            self.with_store(|store| store.forget_baseline(course_id, &outcome.forgotten))?;
+        }
         // When the files were uploaded tells the semester (see `courses::semester`).
         let activity = count_activity(
             tree.files.iter().map(|f| f.timemodified),

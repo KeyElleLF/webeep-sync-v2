@@ -1,7 +1,8 @@
 //! The sync command.
 
 use std::collections::HashMap;
-use std::sync::Arc;
+use std::sync::atomic::Ordering;
+use std::sync::{Arc, Mutex};
 use std::time::SystemTime;
 
 use serde::Serialize;
@@ -25,6 +26,10 @@ use crate::sync::tree::TreeOptions;
 
 const PROGRESS_EVENT: &str = "sync-progress";
 const FINISHED_EVENT: &str = "sync-finished";
+/// Sent when any sync (button or automatic) starts and when one fails, so the UI never thinks a
+/// sync is still running after it stopped.
+const STARTED_EVENT: &str = "sync-started";
+const FAILED_EVENT: &str = "sync-failed";
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -32,11 +37,21 @@ struct Progress {
     index: usize,
     total: usize,
     name: String,
+    /// Files transferred / to transfer in the current course (0 / 0 until its plan is known).
+    files_done: usize,
+    files_total: usize,
 }
 
 #[tauri::command]
 pub async fn sync_now(app: AppHandle) -> CommandResult<Vec<CourseSummary>> {
     run_sync(&app).await
+}
+
+/// "Annulla": the running sync (manual or automatic) stops after the downloads in progress.
+#[tauri::command]
+pub fn cancel_sync(state: State<'_, AppState>) {
+    info!("sync cancel requested");
+    state.cancel_sync();
 }
 
 /// One full sync, shared by the button and the background scheduler. Also tells the UI
@@ -46,9 +61,18 @@ pub async fn run_sync(app: &AppHandle) -> CommandResult<Vec<CourseSummary>> {
     let Some(_guard) = state.begin_sync() else {
         return Err(CommandError::new("una sincronizzazione è già in corso"));
     };
-    let summaries = sync_selected(app, &state).await?;
-    let _ = app.emit(FINISHED_EVENT, &summaries);
-    Ok(summaries)
+    state.cancel.store(false, Ordering::Release);
+    let _ = app.emit(STARTED_EVENT, ());
+    match sync_selected(app, &state).await {
+        Ok(summaries) => {
+            let _ = app.emit(FINISHED_EVENT, &summaries);
+            Ok(summaries)
+        }
+        Err(err) => {
+            let _ = app.emit(FAILED_EVENT, &err);
+            Err(err)
+        }
+    }
 }
 
 /// Notification "12 file nuovi o aggiornati" with the course names, if anything arrived.
@@ -117,13 +141,42 @@ async fn sync_selected(
         options: TreeOptions {
             flatten_materials: settings.flatten_materials,
         },
+        cancel: Arc::clone(&state.cancel),
+        on_files: None,
     };
     let total = jobs.len();
     info!("sync started: {total} courses");
+    let current = Mutex::new(Progress {
+        index: 0,
+        total,
+        name: String::new(),
+        files_done: 0,
+        files_total: 0,
+    });
+    let emit = |update: &dyn Fn(&mut Progress)| {
+        if let Ok(mut progress) = current.lock() {
+            update(&mut progress);
+            let _ = app.emit(PROGRESS_EVENT, &*progress);
+        }
+    };
+    let on_files = |done: usize, of: usize| {
+        emit(&|p| {
+            p.files_done = done;
+            p.files_total = of;
+        });
+    };
+    let context = SyncContext {
+        on_files: Some(&on_files),
+        ..context
+    };
     let summaries = context
         .sync_all(&jobs, |index, course| {
-            let name = course.name.clone();
-            let _ = app.emit(PROGRESS_EVENT, Progress { index, total, name });
+            emit(&|p| {
+                p.index = index;
+                p.name = course.name.clone();
+                p.files_done = 0;
+                p.files_total = 0;
+            });
         })
         .await?;
     let now = unix_seconds(SystemTime::now());

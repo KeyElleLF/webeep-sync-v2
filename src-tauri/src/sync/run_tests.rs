@@ -8,6 +8,7 @@ use wiremock::{Mock, MockServer, ResponseTemplate};
 use super::*;
 use crate::auth::token::WsToken;
 use crate::sync::download::RetryPolicy;
+use crate::sync::plan::BaselineEntry;
 use crate::test_support::fixture;
 
 const DIQ: u64 = 24951;
@@ -80,6 +81,8 @@ impl Env {
             today: NaiveDate::from_ymd_opt(2026, 11, 9).unwrap(),
             now: 1_794_000_000,
             options: TreeOptions::default(),
+            cancel: Arc::new(AtomicBool::new(false)),
+            on_files: None,
         }
     }
 }
@@ -100,6 +103,24 @@ fn exception(errorcode: &str) -> ResponseTemplate {
     ResponseTemplate::new(200).set_body_json(json!({
         "exception": "moodle_exception", "errorcode": errorcode, "message": "x"
     }))
+}
+
+#[tokio::test]
+async fn a_cancelled_sync_stops_before_the_next_course() {
+    let env = Env::new().await;
+    env.serve_course().await;
+    let diq = course(DIQ, "DATA AND INFORMATION QUALITY");
+    let jobs = [CourseJob {
+        course: &diq,
+        folder: "DATA AND INFORMATION QUALITY",
+    }];
+    let context = env.context();
+    context.cancel.store(true, Ordering::Release);
+
+    let summaries = context.sync_all(&jobs, |_, _| {}).await.unwrap();
+
+    assert!(summaries.is_empty());
+    assert!(!env.dir.path().join("DATA AND INFORMATION QUALITY").exists());
 }
 
 #[tokio::test]
@@ -235,4 +256,42 @@ async fn an_unsafe_folder_is_refused() {
 
     assert!(summaries[0].error.is_some());
     assert!(summaries[0].report.downloaded.is_empty());
+}
+
+#[tokio::test]
+async fn a_file_removed_from_webeep_is_reported_once_and_kept_on_disk() {
+    let env = Env::new().await;
+    env.serve_course().await;
+    let diq = course(DIQ, "DATA AND INFORMATION QUALITY");
+    let jobs = [CourseJob {
+        course: &diq,
+        folder: "DATA AND INFORMATION QUALITY",
+    }];
+    env.context().sync_all(&jobs, |_, _| {}).await.unwrap();
+    // A file the app downloaded earlier and the teacher has since removed from WeBeep.
+    let gone = env
+        .dir
+        .path()
+        .join("DATA AND INFORMATION QUALITY")
+        .join("gone.pdf");
+    std::fs::write(&gone, b"mine").unwrap();
+    let entry = BaselineEntry {
+        local_path: "gone.pdf".to_owned(),
+        remote_timemodified: 1,
+        remote_filesize: 4,
+        local_size: 4,
+        local_mtime: 1,
+    };
+    env.store
+        .lock()
+        .unwrap()
+        .save_baseline(DIQ, &[("999:/gone.pdf".to_owned(), entry)])
+        .unwrap();
+
+    let second = env.context().sync_all(&jobs, |_, _| {}).await.unwrap();
+    let third = env.context().sync_all(&jobs, |_, _| {}).await.unwrap();
+
+    assert_eq!(second[0].report.removed_remotely, ["gone.pdf"]);
+    assert!(third[0].report.removed_remotely.is_empty());
+    assert!(gone.exists());
 }

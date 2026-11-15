@@ -69,12 +69,25 @@ impl Fixture {
         baseline: &HashMap<String, BaselineEntry>,
         actions: Vec<Action>,
     ) -> CourseOutcome {
+        self.run_with(remote, baseline, actions, false, None).await
+    }
+
+    async fn run_with(
+        &self,
+        remote: &[RemoteFile],
+        baseline: &HashMap<String, BaselineEntry>,
+        actions: Vec<Action>,
+        cancelled: bool,
+        on_files: Option<&FileProgress<'_>>,
+    ) -> CourseOutcome {
         let run = CourseRun {
             fetcher: &self.fetcher,
             limit: Arc::new(Semaphore::new(2)),
             root: self.dir.path(),
             remote,
             baseline,
+            cancel: Arc::new(AtomicBool::new(cancelled)),
+            on_files,
         };
         run.execute(actions).await
     }
@@ -87,6 +100,47 @@ fn download(file: &RemoteFile, reason: DownloadReason) -> Action {
         url: file.fileurl.clone(),
         reason,
     }
+}
+
+#[tokio::test]
+async fn a_cancelled_run_starts_no_download_and_reports_no_error() {
+    let fx = Fixture::new().await;
+    fx.serve("a.pdf", b"aaaa").await;
+    let a = fx.remote("1:/a.pdf", "a.pdf", 4);
+    let actions = vec![download(&a, DownloadReason::New)];
+
+    let outcome = fx
+        .run_with(&[a], &HashMap::new(), actions, true, None)
+        .await;
+
+    assert_eq!(fx.read("a.pdf"), None);
+    assert!(outcome.report.downloaded.is_empty());
+    assert!(
+        outcome.report.errors.is_empty(),
+        "{:?}",
+        outcome.report.errors
+    );
+    assert!(outcome.baseline.is_empty());
+}
+
+#[tokio::test]
+async fn reports_how_many_files_are_done() {
+    let fx = Fixture::new().await;
+    fx.serve("a.pdf", b"aaaa").await;
+    fx.serve("b.pdf", b"bbbb").await;
+    let a = fx.remote("1:/a.pdf", "a.pdf", 4);
+    let b = fx.remote("2:/b.pdf", "b.pdf", 4);
+    let actions = vec![
+        download(&a, DownloadReason::New),
+        download(&b, DownloadReason::New),
+    ];
+    let seen = std::sync::Mutex::new(Vec::new());
+    let record = |done: usize, total: usize| seen.lock().unwrap().push((done, total));
+
+    fx.run_with(&[a, b], &HashMap::new(), actions, false, Some(&record))
+        .await;
+
+    assert_eq!(*seen.lock().unwrap(), [(0, 2), (1, 2), (2, 2)]);
 }
 
 #[tokio::test]
@@ -124,6 +178,8 @@ async fn downloads_adopts_and_reports_the_rest() {
     assert_eq!(report.adopted, 1);
     assert_eq!(report.kept_local, ["n.pdf"]);
     assert_eq!(report.removed_remotely, ["r.pdf"]);
+    // Reported once, then no longer tracked: the copy on disk becomes the user's.
+    assert_eq!(outcome.forgotten, ["4:/r.pdf"]);
     assert!(report.errors.is_empty(), "{:?}", report.errors);
 
     let saved: HashMap<_, _> = outcome.baseline.into_iter().collect();

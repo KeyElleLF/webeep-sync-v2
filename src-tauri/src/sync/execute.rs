@@ -1,10 +1,12 @@
 //! Applies the planned actions of one course: downloads (bounded by a shared semaphore),
 //! adoptions, renames and conflict copies. Failures are collected per file and never stop
-//! the rest of the course.
+//! the rest of the course. A cancelled sync starts no new download; the ones already running
+//! finish (each file is written atomically, so nothing is left half done).
 
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 use serde::Serialize;
 use tokio::sync::Semaphore;
@@ -20,6 +22,9 @@ const UNSAFE_PATH: &str = "percorso non valido";
 /// Conflict copies of the same file on the same day before giving up.
 const MAX_COPIES: u32 = 99;
 const VANISHED: &str = "il file non è più presente sul disco";
+
+/// Called with (files done, files to transfer) of the course, for the progress shown in the UI.
+pub type FileProgress<'a> = dyn Fn(usize, usize) + Send + Sync + 'a;
 
 /// A file that could not be synced, for the summary.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -48,6 +53,9 @@ pub struct CourseReport {
 pub struct CourseOutcome {
     /// Baseline entries to save (inserted or replaced).
     pub baseline: Vec<(String, BaselineEntry)>,
+    /// Files the teacher removed from WeBeep: reported this once, then no longer tracked, so the
+    /// copy on disk becomes the user's (never touched again, not even by the cleanup).
+    pub forgotten: Vec<String>,
     pub report: CourseReport,
 }
 
@@ -76,8 +84,13 @@ enum Done {
         to: String,
     },
     KeptLocal(String),
-    RemovedRemotely(String),
+    RemovedRemotely {
+        key: String,
+        path: String,
+    },
     Failed(FileError),
+    /// Not started because the sync was cancelled: nothing changed, nothing to report.
+    Cancelled,
 }
 
 /// Shared context of a course run.
@@ -88,6 +101,9 @@ pub struct CourseRun<'a> {
     pub root: &'a Path,
     pub remote: &'a [RemoteFile],
     pub baseline: &'a HashMap<String, BaselineEntry>,
+    /// Set by "Annulla": downloads not yet started are skipped.
+    pub cancel: Arc<AtomicBool>,
+    pub on_files: Option<&'a FileProgress<'a>>,
 }
 
 impl CourseRun<'_> {
@@ -112,8 +128,20 @@ impl CourseRun<'_> {
                 other => done.push(self.apply_local(other)),
             }
         }
+        let total = transfers.len();
+        let report = |finished: usize| {
+            if let Some(on_files) = self.on_files {
+                on_files(finished, total);
+            }
+        };
+        if total > 0 {
+            report(0);
+        }
+        let mut finished = 0;
         while let Some(joined) = transfers.join_next().await {
             done.push(joined.unwrap_or_else(|err| failed("?", &err.to_string())));
+            finished += 1;
+            report(finished);
         }
         self.fold(done)
     }
@@ -199,6 +227,7 @@ impl CourseRun<'_> {
     ) -> impl Future<Output = Done> + Send + 'static {
         let fetcher = self.fetcher.clone();
         let limit = Arc::clone(&self.limit);
+        let cancel = Arc::clone(&self.cancel);
         async move {
             let shown = match &action {
                 Action::Conflict { conflict_path, .. } => conflict_path.clone(),
@@ -207,6 +236,9 @@ impl CourseRun<'_> {
             let Ok(_permit) = limit.acquire_owned().await else {
                 return failed(&shown, "sincronizzazione interrotta");
             };
+            if cancel.load(Ordering::Acquire) {
+                return Done::Cancelled;
+            }
             match fetcher.fetch(&target).await {
                 Ok(meta) => transferred(action, meta),
                 Err(err) => failed(&shown, &err.to_string()),
@@ -227,7 +259,7 @@ impl CourseRun<'_> {
                 Err(message) => failed(&to, &message),
             },
             Action::KeepLocal { path, .. } => Done::KeptLocal(path),
-            Action::RemovedRemotely { path, .. } => Done::RemovedRemotely(path),
+            Action::RemovedRemotely { key, path } => Done::RemovedRemotely { key, path },
             Action::Download { path, .. } | Action::Conflict { path, .. } => {
                 failed(&path, "azione inattesa")
             }
@@ -244,6 +276,9 @@ impl CourseRun<'_> {
         for item in done {
             if let Some(entry) = baseline_after(&item, &remote, self.baseline) {
                 outcome.baseline.push(entry);
+            }
+            if let Done::RemovedRemotely { key, .. } = &item {
+                outcome.forgotten.push(key.clone());
             }
             record(&mut outcome.report, item);
         }
@@ -287,7 +322,9 @@ fn baseline_after(
             };
             (key.clone(), moved)
         }),
-        Done::KeptLocal(_) | Done::RemovedRemotely(_) | Done::Failed(_) => None,
+        Done::KeptLocal(_) | Done::RemovedRemotely { .. } | Done::Failed(_) | Done::Cancelled => {
+            None
+        }
     }
 }
 
@@ -303,8 +340,9 @@ fn record(report: &mut CourseReport, done: Done) {
         Done::Adopted { .. } => report.adopted += 1,
         Done::Renamed { .. } => report.renamed += 1,
         Done::KeptLocal(path) => report.kept_local.push(path),
-        Done::RemovedRemotely(path) => report.removed_remotely.push(path),
+        Done::RemovedRemotely { path, .. } => report.removed_remotely.push(path),
         Done::Failed(error) => report.errors.push(error),
+        Done::Cancelled => {}
     }
 }
 
