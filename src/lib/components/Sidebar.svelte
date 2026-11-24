@@ -167,7 +167,6 @@
       class="primary sync-button"
       title="{t('sync.now')} (Ctrl+R)"
       class:busy={syncing}
-      class:done={done && !syncing}
       disabled={!canSync || syncing}
       onclick={onsync}
       style:--fill={fill}
@@ -344,7 +343,8 @@
   }
 
   /* Hover: the white copy, uncovered left to right by the pixel-edged mask in 0.6 s and covered
-     again on the way out. Not while syncing or just after (the button is showing progress). */
+     again on the way out. Not while syncing (the button is off and shows the progress); while the
+     tick shows after a sync it does, since the button can start the next one. */
   .hover-copy {
     position: absolute;
     z-index: 3;
@@ -372,8 +372,8 @@
       mask-position 0.6s ease-in-out;
   }
 
-  .sync-button:not(.busy, .done, :disabled):hover .hover-copy,
-  .sync-button:not(.busy, .done, :disabled):focus-visible .hover-copy {
+  .sync-button:not(.busy, :disabled):hover .hover-copy,
+  .sync-button:not(.busy, :disabled):focus-visible .hover-copy {
     -webkit-mask-position: 0 0;
     mask-position: 0 0;
   }
