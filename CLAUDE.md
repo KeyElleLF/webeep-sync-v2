@@ -119,8 +119,9 @@ logica di sync e corsi.
     ancora partiti (`Done::Cancelled`, né errore né baseline) e lascia finire quelli in corso.
     Avanzamento per file: `FileProgress` (fatti/totale del corso) nell'evento `sync-progress`
     (`filesDone`, `filesTotal`); la barra a pixel conta anche la frazione di file.
-  - **Fine del sync**: spunta nel bottone e messaggio verde nella barra di stato per 8 s
-    («Tutto aggiornato · N corsi controllati», «… file nuovi o aggiornati», «annullata»).
+  - **Fine del sync**: spunta nel bottone per 8 s (`doneFresh`) e, dal 2026-11-24, l'esito nella
+    barra di stato **fino al sync successivo** (`doneMessage`, spunta verde e testo normale:
+    «Tutto aggiornato · N corsi controllati», «… file nuovi o aggiornati», «annullata»).
   - **Errori**: `shownError` dice cosa è fallito (`FAILURES`: titolo, «Riprova», scheda
     d'origine); il banner compare solo su quella scheda, con un pallino rosso sulla voce del menu
     quando si è altrove.
@@ -140,7 +141,13 @@ logica di sync e corsi.
     fuoco intrappolato nei dialoghi (`src/lib/focus-trap.ts`); scorciatoie Ctrl+R/F5 (sync, al
     posto del ricaricamento della finestra) e Ctrl+1…5 (schede), indicate nei tooltip; scheda
     «Lingua / Language» separata nelle Impostazioni.
-  Anteprima senza account: `fixtures/raw/ui-mock.js` (gitignored). Critica salvata in
+  - **Impostazioni a righe** (2026-11-24, come le Impostazioni di Windows 11): gruppi con titolo
+    da 16 px e righe in un riquadro (`.set-group`, `.set-box`, `.set-row` in `styles.css`): a
+    sinistra nome e spiegazione breve, a destra il controllo; interruttori `Switch.svelte`
+    (cobalto con «Attivato»/«Disattivato» accanto). Larghezza fino a 960 px.
+  Anteprima senza account: `fixtures/raw/ui-mock.js` (gitignored). Vite non serve `fixtures/`:
+  copiarlo in `.svelte-kit/ui-mock.js` e caricarlo con
+  `await (await import('/@fs/<percorso del progetto>/.svelte-kit/ui-mock.js')).boot({ loggedIn: true })`. Critica salvata in
   `.impeccable/critique/` (27/40 prima di queste modifiche).
 - La v1 e i dati dell'utente: cartella di sync della v1 in `CLAUDE.local.md`. La prima prova reale
   è stata fatta in una cartella nuova; l'adozione dei file della v1 è verificata solo offline

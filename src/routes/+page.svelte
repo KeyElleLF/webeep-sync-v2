@@ -96,7 +96,10 @@
   let backgroundSync = $state(false);
   let cancelling = $state(false);
   /** "Tutto aggiornato · …" after a sync, for a few seconds in the status bar. */
+  /** How the last sync ended: stays in the status bar until the next sync starts. */
   let doneMessage = $state<string | null>(null);
+  /** The tick in the sync button, for a few seconds after the end. */
+  let doneFresh = $state(false);
   let doneTimer: ReturnType<typeof setTimeout> | undefined;
   /** Outcome of the last sync per course, kept for the course list after the summary is closed. */
   let results = $state<Map<number, RowStatus>>(new Map());
@@ -387,8 +390,9 @@
 
   function showDone(message: string) {
     doneMessage = message;
+    doneFresh = true;
     clearTimeout(doneTimer);
-    doneTimer = setTimeout(() => (doneMessage = null), DONE_MS);
+    doneTimer = setTimeout(() => (doneFresh = false), DONE_MS);
   }
 
   function doneText(result: CourseSummary[]): string {
@@ -549,6 +553,7 @@
       // Automatic syncs (while the window is open) report here too.
       listen(SYNC_STARTED_EVENT, () => {
         if (!syncRequested) backgroundSync = true;
+        doneMessage = null;
       }),
       // Every sync ends with one of these two, so the UI never stays "syncing".
       listen<{ message: string }>(SYNC_FAILED_EVENT, (e) => {
@@ -588,7 +593,7 @@
       {progress}
       syncing={syncRunning}
       {cancelling}
-      done={doneMessage !== null && !syncRunning}
+      done={doneFresh && !syncRunning}
       canSync={canEdit && !!root && !!courses}
       onopen={open}
       onsync={sync}
@@ -732,56 +737,84 @@
           <Deadlines {deadlines} />
         {:else if tab === "settings"}
           <div class="settings">
-            <section class="card">
+            <section class="set-group">
               <h2>{t("settings.account")}</h2>
-              <p>{t("settings.loggedInAs")} <strong>{session.fullname}</strong>.</p>
-              <button onclick={logout} disabled={!canEdit}>{t("settings.logout")}</button>
+              <div class="set-box">
+                <div class="set-row">
+                  <div class="set-label">
+                    <span>{t("settings.loggedInAsName", { name: session.fullname ?? "" })}</span>
+                    <span class="set-desc">{t("settings.accountHint")}</span>
+                  </div>
+                  <div class="set-ctl">
+                    <button onclick={logout} disabled={!canEdit}>{t("settings.logout")}</button>
+                  </div>
+                </div>
+              </div>
             </section>
-            <section class="card">
+            <section class="set-group">
               <h2>{t("settings.folder")}</h2>
-              <p>
-                {#if root}<code>{root}</code>{:else}{t("settings.folderPrompt")}{/if}
-              </p>
-              <p class="muted">{t("settings.folderHint")}</p>
-              <button onclick={chooseRoot} disabled={!canEdit}>
-                {root ? t("common.changeFolder") : t("common.chooseFolder")}
-              </button>
+              <div class="set-box">
+                <div class="set-row">
+                  <div class="set-label">
+                    {#if root}
+                      <code class="root">{root}</code>
+                    {:else}
+                      <span class="no-root">{t("settings.folderPrompt")}</span>
+                    {/if}
+                    <span class="set-desc">{t("settings.folderHint")}</span>
+                  </div>
+                  <div class="set-ctl">
+                    <button class:primary={!root} onclick={chooseRoot} disabled={!canEdit}>
+                      {root ? t("common.changeFolder") : t("common.chooseFolder")}
+                    </button>
+                  </div>
+                </div>
+              </div>
             </section>
             {#if settings}
-              <section class="card">
-                <h2>{t("settings.syncAndNotifications")}</h2>
-                <SettingsPanel
-                  {settings}
-                  disabled={!idle}
-                  onchange={saveSettings}
-                />
-              </section>
+              <SettingsPanel {settings} disabled={!idle} onchange={saveSettings} />
             {/if}
-            <section class="card">
+            <section class="set-group">
               <h2>Lingua / Language</h2>
-              <select
-                value={lang()}
-                aria-label="Lingua / Language"
-                onchange={(e) => changeLanguage(e.currentTarget.value as Lang)}
-              >
-                <option value="it">Italiano</option>
-                <option value="en">English</option>
-              </select>
+              <div class="set-box">
+                <div class="set-row">
+                  <div class="set-label">
+                    <span id="set-language">{t("settings.languageTitle")}</span>
+                    <span class="set-desc">{t("settings.languageHint")}</span>
+                  </div>
+                  <div class="set-ctl">
+                    <select
+                      value={lang()}
+                      aria-labelledby="set-language"
+                      onchange={(e) => changeLanguage(e.currentTarget.value as Lang)}
+                    >
+                      <option value="it">Italiano</option>
+                      <option value="en">English</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
             </section>
-            <section class="card">
+            <section class="set-group">
               <h2>{t("update.title")}</h2>
-              <p>{t("update.current", { version: appInfo?.version ?? "?" })}</p>
-              <button disabled={checkingUpdate} onclick={manualUpdateCheck}>
-                {t("update.check")}
-              </button>
-              {#if updateMessage}
-                <p class="muted" role="status">{updateMessage}</p>
-              {/if}
+              <div class="set-box">
+                <div class="set-row">
+                  <div class="set-label">
+                    <span>{t("update.current", { version: appInfo?.version ?? "?" })}</span>
+                    <span class="set-desc" role="status">{updateMessage ?? t("update.autoHint")}</span>
+                  </div>
+                  <div class="set-ctl">
+                    <button disabled={checkingUpdate} onclick={manualUpdateCheck}>
+                      {t("update.check")}
+                    </button>
+                  </div>
+                </div>
+              </div>
             </section>
-            <section class="card">
+            <section class="set-group">
               <h2>{t("support.title")}</h2>
               <SupportPanel info={appInfo} disabled={!idle} />
-              <p class="muted unofficial">{t("common.unofficial")}</p>
+              <p class="set-note">{t("common.unofficial")}</p>
             </section>
             {#if import.meta.env.DEV}
               <!-- Phase 0 dump: development only (the command also refuses in release builds). -->
@@ -803,7 +836,7 @@
           <p class="notice" role="status">{notice}</p>
           <button class="link" onclick={() => (notice = null)}>{t("common.close")}</button>
         {:else if doneMessage}
-          <!-- The confident end of a sync: what happened, then it fades away. -->
+          <!-- How the last sync ended, until the next one starts. -->
           <p class="done" role="status"><Icon name="check" size={14} />{doneMessage}</p>
         {/if}
       </footer>
@@ -979,21 +1012,22 @@
     padding: 0;
   }
 
+  /* Rows as wide as the page, up to a comfortable length. */
   .settings {
-    max-width: 760px;
+    max-width: 960px;
   }
 
-  .settings .card p {
-    max-width: 66ch;
+  .settings :global(details.card) {
+    margin-top: 28px;
   }
 
-  .settings .card > :global(button) {
-    margin-top: 4px;
+  .root {
+    font-size: var(--fs-md);
+    word-break: break-all;
   }
 
-  .unofficial {
-    margin: 14px 0 0;
-    font-size: var(--fs-sm);
+  .no-root {
+    color: var(--warn);
   }
 
   .status {
@@ -1027,6 +1061,9 @@
     display: flex;
     align-items: center;
     gap: 8px;
+  }
+
+  .done :global(.icon) {
     color: var(--ok);
   }
 

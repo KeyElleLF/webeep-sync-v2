@@ -337,6 +337,14 @@ export const it = {
   "settings.account": "Account",
   "settings.loggedInAs": "Accesso effettuato come",
   "settings.logout": "Esci",
+  "settings.loggedInAsName": "Connesso come {name}",
+  "settings.accountHint":
+    "Il token d'accesso resta solo su questo PC, nel Gestore credenziali di Windows.",
+  "settings.autosyncHint": "Scarica le novità dei corsi selezionati a intervalli regolari.",
+  "settings.notificationsTitle": "Notifiche di sistema",
+  "settings.notificationsHint": "File nuovi, avvisi della bacheca e scadenze entro 24 ore.",
+  "settings.languageTitle": "Lingua dell'interfaccia",
+  "settings.languageHint": "I contenuti di WeBeep restano in italiano, come sul sito.",
   "settings.folder": "Cartella di destinazione",
   "settings.folderPrompt": "Scegli dove salvare il materiale dei corsi.",
   "settings.folderHint":
@@ -393,6 +401,7 @@ export const it = {
     "sistema già compilati. Allega il file di diagnostica: aiuta a capire cosa è successo.",
   "support.report": "Segnala un problema",
   "support.reportShort": "Segnala",
+  "support.rowTitle": "Qualcosa non funziona?",
   "support.export": "Esporta diagnostica…",
   "support.previewHint":
     "Ecco cosa contiene il file: cartelle personali, token ed email sono già nascosti. " +
@@ -402,6 +411,7 @@ export const it = {
   "update.title": "Aggiornamenti",
   "update.current": "Versione installata: {version}",
   "update.check": "Controlla aggiornamenti",
+  "update.autoHint": "L'app installata controlla da sola all'avvio e ogni 6 ore.",
   "update.upToDate": "Hai già l'ultima versione.",
   "update.available": "È disponibile WeBeep Sync {version}",
   "update.install": "Aggiorna ora",

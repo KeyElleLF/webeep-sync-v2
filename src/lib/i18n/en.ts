@@ -338,6 +338,14 @@ export const en: Record<keyof typeof it, string> = {
   "settings.account": "Account",
   "settings.loggedInAs": "Logged in as",
   "settings.logout": "Log out",
+  "settings.loggedInAsName": "Signed in as {name}",
+  "settings.accountHint":
+    "The access token stays only on this PC, in the Windows Credential Manager.",
+  "settings.autosyncHint": "Downloads what is new in the selected courses at regular intervals.",
+  "settings.notificationsTitle": "System notifications",
+  "settings.notificationsHint": "New files, announcements and deadlines within 24 hours.",
+  "settings.languageTitle": "Interface language",
+  "settings.languageHint": "WeBeep content stays in Italian, as on the site.",
   "settings.folder": "Destination folder",
   "settings.folderPrompt": "Choose where to save the material of your courses.",
   "settings.folderHint":
@@ -395,6 +403,7 @@ export const en: Record<keyof typeof it, string> = {
     "and system already filled in. Attach the diagnostics file: it helps to understand what happened.",
   "support.report": "Report a problem",
   "support.reportShort": "Report",
+  "support.rowTitle": "Something not working?",
   "support.export": "Export diagnostics…",
   "support.previewHint":
     "This is what the file contains: personal folders, tokens and emails are already hidden. " +
@@ -404,6 +413,7 @@ export const en: Record<keyof typeof it, string> = {
   "update.title": "Updates",
   "update.current": "Installed version: {version}",
   "update.check": "Check for updates",
+  "update.autoHint": "The installed app checks by itself at start and every 6 hours.",
   "update.upToDate": "You already have the latest version.",
   "update.available": "WeBeep Sync {version} is available",
   "update.install": "Update now",

@@ -1,6 +1,8 @@
 <script lang="ts">
+  // Settings groups of the sync: while the app is open, downloads, passed courses.
   import type { Settings } from "$lib/api";
   import { t, type MessageKey } from "$lib/i18n/index.svelte";
+  import Switch from "./Switch.svelte";
 
   interface Props {
     settings: Settings;
@@ -21,126 +23,117 @@
   const RECOMMENDED_CONCURRENCY = 4;
 </script>
 
-<h3>{t("settings.whileOpen")}</h3>
-<label class="row">
-  <input
-    type="checkbox"
-    class="switch"
-    checked={settings.autosync}
-    {disabled}
-    onchange={(e) => onchange({ ...settings, autosync: e.currentTarget.checked })}
-  />
-  <span>{t("settings.autosync")}</span>
-  <select
-    value={settings.autosyncMinutes}
-    disabled={disabled || !settings.autosync}
-    aria-label={t("settings.interval")}
-    onchange={(e) => onchange({ ...settings, autosyncMinutes: Number(e.currentTarget.value) })}
-  >
-    {#each INTERVALS as i (i.minutes)}
-      <option value={i.minutes}>{t(i.label)}</option>
-    {/each}
-  </select>
-</label>
-<label class="row">
-  <input
-    type="checkbox"
-    class="switch"
-    checked={settings.notifications}
-    {disabled}
-    onchange={(e) => onchange({ ...settings, notifications: e.currentTarget.checked })}
-  />
-  <span>{t("settings.notifications")}</span>
-</label>
-<p class="muted">{t("settings.whileOpenHint")}</p>
+<section class="set-group">
+  <h2>{t("settings.syncAndNotifications")}</h2>
+  <div class="set-box">
+    <div class="set-row">
+      <div class="set-label">
+        <span id="set-autosync">{t("settings.autosync")}</span>
+        <span class="set-desc">{t("settings.autosyncHint")}</span>
+      </div>
+      <div class="set-ctl">
+        <select
+          value={settings.autosyncMinutes}
+          disabled={disabled || !settings.autosync}
+          aria-label={t("settings.interval")}
+          onchange={(e) =>
+            onchange({ ...settings, autosyncMinutes: Number(e.currentTarget.value) })}
+        >
+          {#each INTERVALS as i (i.minutes)}
+            <option value={i.minutes}>{t(i.label)}</option>
+          {/each}
+        </select>
+        <Switch
+          checked={settings.autosync}
+          {disabled}
+          labelledby="set-autosync"
+          onchange={(autosync) => onchange({ ...settings, autosync })}
+        />
+      </div>
+    </div>
+    <div class="set-row">
+      <div class="set-label">
+        <span id="set-notifications">{t("settings.notificationsTitle")}</span>
+        <span class="set-desc">{t("settings.notificationsHint")}</span>
+      </div>
+      <div class="set-ctl">
+        <Switch
+          checked={settings.notifications}
+          {disabled}
+          labelledby="set-notifications"
+          onchange={(notifications) => onchange({ ...settings, notifications })}
+        />
+      </div>
+    </div>
+  </div>
+  <p class="set-note">{t("settings.whileOpenHint")}</p>
+</section>
 
-<h3>{t("settings.download")}</h3>
+<section class="set-group">
+  <h2>{t("settings.download")}</h2>
+  <div class="set-box">
+    <div class="set-row">
+      <div class="set-label">
+        <span id="set-concurrency">{t("settings.concurrency")}</span>
+        <span class="set-desc">{t("settings.concurrencyHint")}</span>
+      </div>
+      <div class="set-ctl">
+        <select
+          value={settings.downloadConcurrency}
+          {disabled}
+          aria-labelledby="set-concurrency"
+          onchange={(e) =>
+            onchange({ ...settings, downloadConcurrency: Number(e.currentTarget.value) })}
+        >
+          {#each CONCURRENCY_OPTIONS as n (n)}
+            <option value={n}
+              >{n === RECOMMENDED_CONCURRENCY ? t("settings.recommended", { value: n }) : n}</option
+            >
+          {/each}
+        </select>
+      </div>
+    </div>
+    <div class="set-row">
+      <div class="set-label">
+        <span id="set-flatten">{t("settings.flatten")}</span>
+        <span class="set-desc">{t("settings.flattenHint")}</span>
+      </div>
+      <div class="set-ctl">
+        <Switch
+          checked={settings.flattenMaterials}
+          {disabled}
+          labelledby="set-flatten"
+          onchange={(flattenMaterials) => onchange({ ...settings, flattenMaterials })}
+        />
+      </div>
+    </div>
+  </div>
+</section>
 
-<label class="row">
-  <span>{t("settings.concurrency")}</span>
-  <select
-    value={settings.downloadConcurrency}
-    {disabled}
-    onchange={(e) => onchange({ ...settings, downloadConcurrency: Number(e.currentTarget.value) })}
-  >
-    {#each CONCURRENCY_OPTIONS as n}
-      <option value={n}
-        >{n === RECOMMENDED_CONCURRENCY ? t("settings.recommended", { value: n }) : n}</option
-      >
-    {/each}
-  </select>
-</label>
-<p class="muted">{t("settings.concurrencyHint")}</p>
-
-<label class="row">
-  <input
-    type="checkbox"
-    class="switch"
-    checked={settings.flattenMaterials}
-    {disabled}
-    onchange={(e) => onchange({ ...settings, flattenMaterials: e.currentTarget.checked })}
-  />
-  <span>{t("settings.flatten")}</span>
-</label>
-<p class="muted">{t("settings.flattenHint")}</p>
-
-<h3>{t("common.passedCourses")}</h3>
-<label class="row">
-  <span>{t("settings.cleanupWhen")}</span>
-  <select
-    value={settings.cleanupPolicy}
-    {disabled}
-    onchange={(e) =>
-      onchange({
-        ...settings,
-        cleanupPolicy: e.currentTarget.value as Settings["cleanupPolicy"],
-      })}
-  >
-    <option value="ask">{t("settings.cleanup.ask")}</option>
-    <option value="always">{t("settings.cleanup.always")}</option>
-    <option value="never">{t("settings.cleanup.never")}</option>
-  </select>
-</label>
-<p class="muted">{t("settings.cleanupHint")}</p>
-
-<style>
-  h3 {
-    margin: 22px 0 0;
-    padding-top: 16px;
-    border-top: 1px solid var(--border);
-    color: var(--muted);
-    font-size: var(--fs-sm);
-    font-weight: 600;
-  }
-
-  /* The first section sits right under the card title. */
-  h3:first-of-type {
-    margin-top: 6px;
-    padding-top: 0;
-    border-top: none;
-  }
-
-  .row {
-    display: flex;
-    gap: 12px;
-    align-items: center;
-    margin-top: 12px;
-    cursor: pointer;
-  }
-
-  .row select {
-    padding-block: 5px;
-  }
-
-  .muted {
-    color: var(--muted);
-    margin: 5px 0 0;
-    font-size: var(--fs-sm);
-    line-height: 1.5;
-  }
-
-  /* Hints line up with the text after a switch. */
-  .row:has(.switch) + .muted {
-    padding-left: 46px;
-  }
-</style>
+<section class="set-group">
+  <h2>{t("common.passedCourses")}</h2>
+  <div class="set-box">
+    <div class="set-row">
+      <div class="set-label">
+        <span id="set-cleanup">{t("settings.cleanupWhen")}</span>
+        <span class="set-desc">{t("settings.cleanupHint")}</span>
+      </div>
+      <div class="set-ctl">
+        <select
+          value={settings.cleanupPolicy}
+          {disabled}
+          aria-labelledby="set-cleanup"
+          onchange={(e) =>
+            onchange({
+              ...settings,
+              cleanupPolicy: e.currentTarget.value as Settings["cleanupPolicy"],
+            })}
+        >
+          <option value="ask">{t("settings.cleanup.ask")}</option>
+          <option value="always">{t("settings.cleanup.always")}</option>
+          <option value="never">{t("settings.cleanup.never")}</option>
+        </select>
+      </div>
+    </div>
+  </div>
+</section>

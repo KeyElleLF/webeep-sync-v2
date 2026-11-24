@@ -6,6 +6,7 @@
   import { isActive, semesterNumber, type RowStatus } from "$lib/format";
   import { displayName, t, tn, type MessageKey } from "$lib/i18n/index.svelte";
   import Icon from "./Icon.svelte";
+  import Switch from "./Switch.svelte";
 
   interface Props {
     course: CourseRow;
@@ -135,16 +136,11 @@
         <span class="d">{t("courses.syncThisHint")}</span>
       </div>
       <div class="ctl">
-        <span class="onoff" aria-hidden="true">
-          {course.selected ? t("common.on") : t("common.off")}
-        </span>
-        <input
-          type="checkbox"
-          class="switch"
+        <Switch
           checked={course.selected}
           {disabled}
-          aria-labelledby="course-sync-label"
-          onchange={(e) => ontoggle(course, e.currentTarget.checked)}
+          labelledby="course-sync-label"
+          onchange={(selected) => ontoggle(course, selected)}
         />
       </div>
     </div>
@@ -379,13 +375,6 @@
     display: flex;
     align-items: center;
     gap: 8px;
-  }
-
-  .onoff {
-    min-width: 72px;
-    color: var(--muted);
-    font-size: var(--fs-sm);
-    text-align: right;
   }
 
   /* Auto · 1° · 2°: one choice of three, side by side. */

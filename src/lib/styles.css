@@ -509,6 +509,75 @@ code {
   animation: spin 0.8s linear infinite;
 }
 
+/* ---------- Settings rows (like Windows 11 Settings) ---------- */
+
+/* A group: a heading, then its rows in one rounded box. */
+.set-group + .set-group {
+  margin-top: 28px;
+}
+
+.set-group > h2 {
+  margin: 0 0 8px;
+  font-size: var(--fs-lg);
+  font-weight: 600;
+}
+
+.set-box {
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  background: var(--card);
+}
+
+/* One setting: what it is on the left, the control on the right. */
+.set-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-height: 64px;
+  padding: 12px 16px;
+  box-sizing: border-box;
+}
+
+.set-row + .set-row {
+  border-top: 1px solid var(--border);
+}
+
+.set-row.stack {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.set-label {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.set-desc {
+  color: var(--muted);
+  font-size: var(--fs-sm);
+  max-width: 75ch;
+}
+
+.set-ctl {
+  flex: none;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+}
+
+/* A note under a group, for what applies to all of its rows. */
+.set-note {
+  margin: 8px 2px 0;
+  color: var(--muted);
+  font-size: var(--fs-sm);
+  max-width: 75ch;
+}
+
 /* ---------- Dialogs ---------- */
 
 .overlay {

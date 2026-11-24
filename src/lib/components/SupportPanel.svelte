@@ -51,24 +51,35 @@
   }
 </script>
 
-<p class="muted">{t("support.intro")}</p>
-<div class="buttons">
-  <button disabled={disabled || !info} onclick={report}>{t("support.report")}</button>
-  <button disabled={disabled || working} onclick={showPreview}>{t("support.export")}</button>
-</div>
-
-{#if preview !== null}
-  <p class="hint">{t("support.previewHint")}</p>
-  <pre class="preview">{preview}</pre>
-  <div class="buttons">
-    <button class="primary" disabled={working} onclick={save}>{t("support.save")}</button>
-    <button onclick={() => (preview = null)}>{t("common.close")}</button>
+<div class="set-box">
+  <div class="set-row">
+    <div class="set-label">
+      <span>{t("support.rowTitle")}</span>
+      <span class="set-desc">{t("support.intro")}</span>
+    </div>
+    <div class="set-ctl">
+      <button disabled={disabled || !info} onclick={report}>{t("support.report")}</button>
+      <button disabled={disabled || working} onclick={showPreview}>{t("support.export")}</button>
+    </div>
   </div>
-{/if}
 
-{#if message}
-  <p class:error={message.error} class:ok={!message.error} role="status">{message.text}</p>
-{/if}
+  {#if preview !== null}
+    <div class="set-row stack">
+      <p class="hint">{t("support.previewHint")}</p>
+      <pre class="preview">{preview}</pre>
+      <div class="buttons">
+        <button class="primary" disabled={working} onclick={save}>{t("support.save")}</button>
+        <button onclick={() => (preview = null)}>{t("common.close")}</button>
+      </div>
+    </div>
+  {/if}
+
+  {#if message}
+    <div class="set-row">
+      <p class:error={message.error} class:ok={!message.error} role="status">{message.text}</p>
+    </div>
+  {/if}
+</div>
 
 <style>
   .buttons {
@@ -77,8 +88,12 @@
     gap: 8px;
   }
 
+  p {
+    margin: 0;
+  }
+
   .hint {
-    margin: 14px 0 6px;
+    margin: 0;
     color: var(--muted);
     font-size: var(--fs-sm);
   }
@@ -86,7 +101,7 @@
   .preview {
     max-height: 260px;
     overflow: auto;
-    margin: 0 0 10px;
+    margin: 0;
     padding: 10px 12px;
     border: 1px solid var(--border);
     border-radius: var(--r-sm);
