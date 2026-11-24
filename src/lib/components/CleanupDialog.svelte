@@ -1,6 +1,7 @@
 <script lang="ts">
   import { trapFocus } from "$lib/focus-trap";
   import type { CleanupPreview } from "$lib/api";
+  import { courseTitle } from "$lib/course-title";
   import { formatBytes } from "$lib/format";
   import { t, tn } from "$lib/i18n/index.svelte";
 
@@ -36,13 +37,13 @@
     {#each previews as p (p.courseId)}
       <div class="course">
         {#if p.files + p.modified.length === 0}
-          <p>{t("cleanup.passed")} <strong>{p.name}</strong>: {t("cleanup.nothing")}</p>
+          <p>{t("cleanup.passed")} <strong>{courseTitle(p.name)}</strong>: {t("cleanup.nothing")}</p>
           <div class="buttons">
             <button {disabled} onclick={() => ondecline(p)}>{t("common.ok")}</button>
           </div>
         {:else}
           <p>
-            {t("cleanup.passed")} <strong>{p.name}</strong>. {tn("cleanup.question.before", p.files)}
+            {t("cleanup.passed")} <strong>{courseTitle(p.name)}</strong>. {tn("cleanup.question.before", p.files)}
             <strong>{p.files}</strong>
             {tn("cleanup.question.after", p.files, { size: formatBytes(p.bytes) })}
           </p>
@@ -79,7 +80,7 @@
   }
 
   .dialog h2 {
-    font-size: 1.15rem;
+    font-size: var(--fs-lg);
   }
 
   .course + .course {
@@ -106,7 +107,7 @@
     border-radius: var(--r-md);
     background: var(--bg);
     color: var(--muted);
-    font-size: 0.88em;
+    font-size: var(--fs-sm);
     overflow-wrap: anywhere;
   }
 

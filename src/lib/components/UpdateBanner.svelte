@@ -60,7 +60,7 @@
     max-height: 120px;
     overflow-y: auto;
     color: var(--muted);
-    font-size: 0.9em;
+    font-size: var(--fs-sm);
     white-space: pre-wrap;
   }
 

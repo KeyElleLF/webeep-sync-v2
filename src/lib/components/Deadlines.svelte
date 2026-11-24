@@ -2,6 +2,7 @@
   import type { Deadline } from "$lib/api";
   import { locale, t, type MessageKey } from "$lib/i18n/index.svelte";
   import { openExternal } from "$lib/links";
+  import { courseTitle } from "$lib/course-title";
   import Icon from "./Icon.svelte";
 
   interface Props {
@@ -55,6 +56,11 @@
     return "later";
   }
 
+  /** Due within a day and not yet passed: its time is shown in the warning colour. */
+  function isSoon(d: Deadline): boolean {
+    return !d.overdue && d.due * 1000 - Date.now() < DAY;
+  }
+
   /** Activity types WeBeep may add later are shown as they come. */
   function kindLabel(kind: string): string {
     const key = KINDS[kind];
@@ -67,8 +73,6 @@
       .filter((g) => g.items.length > 0),
   );
 </script>
-
-<p class="hint">{t("deadlines.hint")}</p>
 
 {#if deadlines === null}
   <p class="empty"><Icon name="deadlines" size={18} />{t("deadlines.notLoaded")}</p>
@@ -84,10 +88,10 @@
       <span></span>
     </div>
     {#each groups as g (g.id)}
-      <h2 class={g.id}>{t(GROUP_TITLES[g.id])} <span class="count">{g.items.length}</span></h2>
+      <h2>{t(GROUP_TITLES[g.id])} <span class="count">{g.items.length}</span></h2>
       <ul>
         {#each g.items as d (d.id)}
-          <li class="row" class:overdue={d.overdue}>
+          <li class="row" class:overdue={d.overdue} class:soon={isSoon(d)}>
             <span class="when">
               <span>{TIME.format(new Date(d.due * 1000))}</span>
               <span class="relative">{relative(d.due)}</span>
@@ -104,7 +108,7 @@
               {#if d.overdue}<span class="overdue-tag">{t("deadlines.overdue")}</span>{/if}
             </span>
             <span class="meta">{kindLabel(d.kind)}</span>
-            <span class="meta course-name ellipsis" title={d.courseName}>{d.courseName}</span>
+            <span class="meta ellipsis" title={courseTitle(d.courseName)}>{courseTitle(d.courseName)}</span>
             <span class="open" aria-hidden="true">
               {#if d.url}<Icon name="external" size={14} />{/if}
             </span>
@@ -116,12 +120,6 @@
 {/if}
 
 <style>
-  .hint {
-    margin: 0 0 16px;
-    color: var(--muted);
-    font-size: 0.88em;
-  }
-
   .empty {
     display: flex;
     align-items: center;
@@ -150,10 +148,8 @@
     z-index: 1;
     padding-block: 9px;
     color: var(--muted);
-    font-size: 0.8em;
+    font-size: var(--fs-sm);
     font-weight: 600;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
     background: var(--card);
     border-bottom: 1px solid var(--border);
     user-select: none;
@@ -165,26 +161,21 @@
     gap: 8px;
     margin: 0;
     padding: 12px 12px 7px;
-    font-size: 0.92rem;
+    font-size: var(--fs-sm);
     font-weight: 600;
     background: rgba(0, 0, 0, 0.14);
     border-bottom: 1px solid var(--border);
     user-select: none;
   }
 
-  /* Today stands out a little: the deadlines that need attention now. */
-  h2.today {
-    color: var(--warn);
-  }
-
   .count {
     display: inline-block;
     min-width: 18px;
     padding: 0 6px;
-    border-radius: 9px;
+    border-radius: 999px;
     background: rgba(255, 255, 255, 0.07);
     color: var(--muted);
-    font-size: 0.86em;
+    font-size: var(--fs-sm);
     font-weight: 600;
     line-height: 18px;
     text-align: center;
@@ -255,12 +246,12 @@
     flex-direction: column;
     font-variant-numeric: tabular-nums;
     color: var(--muted);
-    font-size: 0.92em;
+    font-size: var(--fs-sm);
   }
 
   .relative {
     color: var(--text);
-    font-size: 0.92em;
+    font-size: var(--fs-sm);
   }
 
   .name {
@@ -269,11 +260,7 @@
 
   .meta {
     color: var(--muted);
-    font-size: 0.9em;
-  }
-
-  .meta.course-name {
-    font-size: 1em;
+    font-size: var(--fs-sm);
   }
 
   .activity {
@@ -283,21 +270,22 @@
     min-width: 0;
   }
 
-  /* One urgency colour per item, and the word: a passed deadline never relies on colour alone. */
+  /* Urgency is the colour of the time only: amber within a day, red once passed, with the word
+     «Scaduta» so it never relies on colour alone. */
+  .soon .relative {
+    color: var(--warn);
+  }
+
   .overdue .when,
-  .overdue .relative {
+  .overdue .relative,
+  .overdue-tag {
     color: var(--danger);
   }
 
   .overdue-tag {
     flex: none;
-    padding: 0 7px;
-    border-radius: 9px;
-    background: color-mix(in srgb, var(--danger) 16%, transparent);
-    color: var(--danger);
-    font-size: 0.8em;
+    font-size: var(--fs-sm);
     font-weight: 600;
-    line-height: 18px;
   }
 
   .open {

@@ -4,6 +4,7 @@
   // sync brought something: the course rows already mark new files and errors.
   import type { CourseSummary } from "$lib/api";
   import { t, tn } from "$lib/i18n/index.svelte";
+  import { courseTitle } from "$lib/course-title";
 
   interface Props {
     summaries: CourseSummary[];
@@ -95,7 +96,7 @@
         {#each newsworthy as s (s.id)}
           <details class="course" class:failed={s.error}>
             <summary>
-              <span class="name course-name">{s.name}</span>
+              <span class="name">{courseTitle(s.name)}</span>
               <span class="meta">{headline(s)}</span>
             </summary>
             <div class="folder-line">
@@ -144,7 +145,7 @@
     border: 1px solid var(--border);
     border-radius: var(--r-lg);
     background: var(--card);
-    animation: rise-in 220ms var(--ease-enter);
+    animation: rise-in var(--t-panel) var(--ease-enter);
   }
 
   .strip.alert {
@@ -177,7 +178,7 @@
     border-radius: 999px;
     background: rgba(255, 255, 255, 0.05);
     color: var(--muted);
-    font-size: 0.88em;
+    font-size: var(--fs-sm);
   }
 
   .stat strong {
@@ -185,18 +186,13 @@
     font-variant-numeric: tabular-nums;
   }
 
-  .stat.warn {
-    background: color-mix(in srgb, var(--warn) 12%, transparent);
-  }
-
+  /* Conflicts and errors: the same neutral pill, with the words in their colour. */
+  .stat.warn,
   .stat.warn strong {
     color: var(--warn);
   }
 
-  .stat.bad {
-    background: color-mix(in srgb, var(--danger) 12%, transparent);
-  }
-
+  .stat.bad,
   .stat.bad strong {
     color: var(--danger);
   }
@@ -204,7 +200,7 @@
   .toggle {
     margin-left: auto;
     color: var(--accent);
-    font-size: 0.9em;
+    font-size: var(--fs-sm);
     font-weight: 500;
   }
 
@@ -217,7 +213,7 @@
 
   .courses {
     padding: 0 14px 12px;
-    animation: rise-in 200ms var(--ease-enter);
+    animation: rise-in var(--t-panel) var(--ease-enter);
   }
 
   .course {
@@ -242,7 +238,7 @@
 
   .course summary .meta {
     margin-left: auto;
-    font-size: 0.88em;
+    font-size: var(--fs-sm);
     text-align: right;
   }
 
@@ -265,7 +261,7 @@
   .folder-line button {
     flex: none;
     padding: 3px 10px;
-    font-size: 0.85em;
+    font-size: var(--fs-sm);
   }
 
   .meta {
@@ -274,7 +270,7 @@
 
   .title {
     margin: 12px 0 4px;
-    font-size: 0.9em;
+    font-size: var(--fs-sm);
     font-weight: 600;
   }
 
@@ -282,7 +278,7 @@
     margin: 0;
     padding-left: 20px;
     color: var(--muted);
-    font-size: 0.9em;
+    font-size: var(--fs-sm);
     overflow-wrap: anywhere;
   }
 

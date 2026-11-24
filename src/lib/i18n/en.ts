@@ -88,6 +88,7 @@ export const en: Record<keyof typeof it, string> = {
   "courses.selectionHint":
     "The selection follows the state of the course; your manual choices always take " +
     "precedence. “Passed” and “Ignore” apply to all courses of the same subject.",
+  "courses.selectionInfoLabel": "How the course selection works",
   "courses.col.semester": "Semester",
   "courses.col.folder": "Folder",
   "courses.section.current.title": "This semester",
@@ -189,6 +190,7 @@ export const en: Record<keyof typeof it, string> = {
     "Links that teachers put on WeBeep instead of files (OneDrive folders, recordings, " +
     "repositories). They open in the browser: put the files you download from there in the " +
     "course folder, in a subfolder of your own. The app never touches them.",
+  "links.infoLabel": "What these links are",
   "links.empty":
     "No links in the synced courses. Links appear after a sync: if a course has only links " +
     "and no files, make sure it is selected in the Courses tab.",
@@ -217,6 +219,7 @@ export const en: Record<keyof typeof it, string> = {
   "deadlines.refresh": "Refresh",
   "deadlines.hint":
     "Assignments and quizzes for the next 14 days. You get a reminder 24 hours before, if the app is open.",
+  "deadlines.infoLabel": "Which deadlines appear",
   "deadlines.notLoaded": "Deadlines not loaded yet.",
   "deadlines.empty": "No deadlines in the next 14 days.",
   "deadlines.col.due": "Due",

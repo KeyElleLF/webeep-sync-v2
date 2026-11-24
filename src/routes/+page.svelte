@@ -24,6 +24,7 @@
     type StateOutcome,
     type SyncProgress,
   } from "$lib/api";
+  import { courseTitle } from "$lib/course-title";
   import { formatBytes, isActive, type RowStatus } from "$lib/format";
   import {
     type Lang,
@@ -43,6 +44,7 @@
   import DevTools from "$lib/components/DevTools.svelte";
   import SupportPanel from "$lib/components/SupportPanel.svelte";
   import UpdateBanner from "$lib/components/UpdateBanner.svelte";
+  import InfoTip from "$lib/components/InfoTip.svelte";
   import {
     RECHECK_MS,
     availableUpdate,
@@ -127,7 +129,7 @@
   const unread = $derived(announcements.filter((a) => !a.read).length);
   // Links of passed, ignored or past courses stay saved but are not shown.
   const activeNames = $derived(
-    new Map((courses ?? []).filter((c) => isActive(c.state)).map((c) => [c.id, c.name])),
+    new Map((courses ?? []).filter((c) => isActive(c.state)).map((c) => [c.id, courseTitle(c.name)])),
   );
   const visibleLinks = $derived(links.filter((l) => activeNames.has(l.courseId)));
   const newLinks = $derived(visibleLinks.filter((l) => !l.seen).length);
@@ -341,7 +343,7 @@
     const skipped = report.skipped.length
       ? ` ${tn("cleanup.skipped", report.skipped.length)}`
       : "";
-    notice = `${preview.name}: ${trashed}${skipped}`;
+    notice = `${courseTitle(preview.name)}: ${trashed}${skipped}`;
   }
 
   async function declineCleanup(preview: CleanupPreview) {
@@ -595,6 +597,11 @@
     <main>
       <header class="page-head">
         <h1>{t(TITLES[tab])}</h1>
+        {#if tab === "links"}
+          <InfoTip text={t("links.hint")} label={t("links.infoLabel")} />
+        {:else if tab === "deadlines"}
+          <InfoTip text={t("deadlines.hint")} label={t("deadlines.infoLabel")} />
+        {/if}
         <div class="actions">
           {#if tab === "courses"}
             <span class="root" class:empty={!root} title={root ?? undefined}>
@@ -649,7 +656,7 @@
             <section class="card suggestion">
               <p>
                 {t("courses.suggestion.before")}
-                <strong>{s.name}</strong>{t("courses.suggestion.after")}
+                <strong>{courseTitle(s.name)}</strong>{t("courses.suggestion.after")}
               </p>
               <div class="buttons">
                 <button
@@ -665,7 +672,7 @@
         </div>
       {/if}
 
-      <!-- Re-created on every tab: each page opens at its top, with a short settle. -->
+      <!-- Re-created on every tab: each page opens at its top (no entrance animation). -->
       {#key tab}
       <div class="content" class:fill={tab === "board"}>
         {#if tab === "courses"}
@@ -767,6 +774,7 @@
             <section class="card">
               <h2>{t("support.title")}</h2>
               <SupportPanel info={appInfo} disabled={!idle} />
+              <p class="muted unofficial">{t("common.unofficial")}</p>
             </section>
             {#if import.meta.env.DEV}
               <!-- Phase 0 dump: development only (the command also refuses in release builds). -->
@@ -878,8 +886,8 @@
   .page-head h1 {
     flex: none;
     margin: 0;
-    font-size: 1.35rem;
-    font-weight: 650;
+    font-size: var(--fs-xl);
+    font-weight: 600;
   }
 
   .actions {
@@ -900,7 +908,7 @@
     border-radius: var(--r-sm);
     background: rgba(255, 255, 255, 0.04);
     color: var(--muted);
-    font-size: 0.88em;
+    font-size: var(--fs-sm);
     user-select: text;
   }
 
@@ -919,13 +927,13 @@
     border-radius: var(--r-md);
     background: color-mix(in srgb, var(--danger) 10%, var(--card));
     color: var(--danger);
-    animation: rise-in 220ms var(--ease-enter);
+    animation: rise-in var(--t-panel) var(--ease-enter);
   }
 
   .error-banner .retry {
     flex: none;
     padding: 4px 12px;
-    font-size: 0.9em;
+    font-size: var(--fs-sm);
   }
 
   .error-banner p {
@@ -937,7 +945,7 @@
 
   .banners {
     padding: 16px 24px 0;
-    animation: rise-in 260ms var(--ease-enter);
+    animation: rise-in var(--t-panel) var(--ease-enter);
   }
 
   .suggestion {
@@ -959,7 +967,6 @@
     min-height: 0;
     overflow-y: auto;
     padding: 20px 24px 28px;
-    animation: rise-in 220ms var(--ease-enter);
   }
 
   /* Pages with their own scrolling panes (the board). */
@@ -982,6 +989,11 @@
     margin-top: 4px;
   }
 
+  .unofficial {
+    margin: 14px 0 0;
+    font-size: var(--fs-sm);
+  }
+
   .status {
     display: flex;
     align-items: center;
@@ -990,19 +1002,19 @@
     padding: 0 24px;
     background: var(--sidebar);
     border-top: 1px solid var(--border);
-    font-size: 0.86em;
+    font-size: var(--fs-sm);
     user-select: none;
   }
 
   .status p {
     flex: 1;
     margin: 0;
-    animation: fade-in 160ms var(--ease);
+    animation: fade-in var(--t-in) var(--ease);
   }
 
   /* Quick actions finish before their message would flash: it appears only after 150 ms. */
   .status .busy {
-    animation: fade-in 160ms var(--ease) 150ms both;
+    animation: fade-in var(--t-in) var(--ease) 150ms both;
   }
 
   .notice {
@@ -1027,9 +1039,7 @@
     height: 100vh;
     padding: 24px;
     overflow-y: auto;
-    background:
-      radial-gradient(60% 50% at 50% 0%, color-mix(in srgb, var(--accent-strong) 14%, transparent), transparent 70%),
-      var(--bg);
+    background: var(--bg);
   }
 
   .welcome-box {
@@ -1037,31 +1047,15 @@
     text-align: center;
   }
 
-  /* The welcome arrives once: logo, name, then the rest. */
-  .welcome-box > :global(*) {
-    animation: rise-in 520ms var(--ease-enter) both;
-  }
-
-  .welcome-box > :global(:nth-child(2)) {
-    animation-delay: 60ms;
-  }
-
-  .welcome-box > :global(:nth-child(3)) {
-    animation-delay: 120ms;
-  }
-
-  .welcome-box > :global(:nth-child(n + 4)) {
-    animation-delay: 180ms;
-  }
-
-  .logo {
-    filter: drop-shadow(0 8px 24px color-mix(in srgb, var(--accent-strong) 35%, transparent));
+  /* The welcome settles in once, as a whole. */
+  .welcome-box {
+    animation: rise-in var(--t-panel) var(--ease-enter) both;
   }
 
   .welcome-box h1 {
     margin: 14px 0 4px;
-    font-size: 1.9rem;
-    font-weight: 650;
+    font-size: var(--fs-display);
+    font-weight: 600;
   }
 
   .welcome-box :global(.card) {
@@ -1083,17 +1077,17 @@
 
   .languages .current {
     color: var(--text);
-    font-weight: 650;
+    font-weight: 600;
     background-size: 100% 1px;
   }
 
   button.big {
     padding: 11px 30px;
-    font-size: 1.02rem;
+    font-size: var(--fs-lg);
   }
 
   .small {
-    font-size: 0.86em;
+    font-size: var(--fs-sm);
     margin-top: 28px;
   }
 </style>

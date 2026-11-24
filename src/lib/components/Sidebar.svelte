@@ -14,6 +14,7 @@
 <script lang="ts" generics="T extends string">
   import type { SyncProgress } from "$lib/api";
   import { locale, t, tn } from "$lib/i18n/index.svelte";
+  import { courseTitle } from "$lib/course-title";
   import Icon from "./Icon.svelte";
 
   // While syncing, the button itself is the progress bar: square cells fill it as courses are done,
@@ -119,9 +120,7 @@
           <span class="alert-dot" aria-label={t("error.generic")}></span>
         {/if}
         {#if item.badge}
-          {#key item.badge}
-            <span class="badge" aria-label={tn("nav.unread", item.badge)}>{item.badge}</span>
-          {/key}
+          <span class="badge" aria-label={tn("nav.unread", item.badge)}>{item.badge}</span>
         {/if}
       </button>
     {/each}
@@ -165,7 +164,7 @@
           · {t("sync.progressFiles", { done: progress.filesDone, total: progress.filesTotal })}
         {/if}
       </p>
-      <p class="small ellipsis current" title={progress.name}>{progress.name}</p>
+      <p class="small ellipsis current" title={courseTitle(progress.name)}>{courseTitle(progress.name)}</p>
     {/if}
     {#if syncing}
       <button class="link cancel" disabled={cancelling} onclick={oncancel}>
@@ -185,7 +184,6 @@
         <span class="ellipsis" title={fullname}>{fullname}</span>
       </div>
     {/if}
-    <p class="small">{t("common.unofficial")}</p>
   </footer>
 </aside>
 
@@ -208,8 +206,8 @@
     align-items: center;
     gap: 10px;
     padding: 2px 8px;
-    font-size: 1.05rem;
-    font-weight: 650;
+    font-size: var(--fs-lg);
+    font-weight: 600;
     letter-spacing: -0.01em;
   }
 
@@ -227,22 +225,8 @@
     right: 0;
     border-radius: var(--r-sm);
     background: var(--selected);
-    transition:
-      transform 240ms var(--ease),
-      height 240ms var(--ease);
+    transition: transform var(--t-panel) var(--ease);
     pointer-events: none;
-  }
-
-  /* A short bar on the left edge of the current entry. */
-  .marker::before {
-    content: "";
-    position: absolute;
-    left: 0;
-    top: 25%;
-    bottom: 25%;
-    width: 3px;
-    border-radius: 0 3px 3px 0;
-    background: var(--accent);
   }
 
   .nav-item {
@@ -340,7 +324,7 @@
   }
 
   .sync-icon.settled {
-    animation: pop 320ms var(--ease-enter);
+    animation: fade-in var(--t-in) var(--ease);
   }
 
   .cancel {
@@ -348,7 +332,7 @@
     white-space: normal;
     text-align: left;
     color: var(--muted);
-    font-size: 0.9em;
+    font-size: var(--fs-sm);
   }
 
   .cancel:hover:not(:disabled) {
@@ -361,7 +345,7 @@
     height: 7px;
     border-radius: 50%;
     background: var(--danger);
-    animation: pop 260ms var(--ease-enter);
+    animation: fade-in var(--t-in) var(--ease);
   }
 
   p {
@@ -370,7 +354,7 @@
 
   .small {
     color: var(--muted);
-    font-size: 0.86em;
+    font-size: var(--fs-sm);
     font-variant-numeric: tabular-nums;
   }
 
@@ -404,9 +388,8 @@
     border-radius: 50%;
     background: var(--selected);
     color: var(--accent);
-    font-size: 0.72rem;
-    font-weight: 700;
-    letter-spacing: 0.02em;
+    font-size: var(--fs-sm);
+    font-weight: 600;
   }
 
 </style>

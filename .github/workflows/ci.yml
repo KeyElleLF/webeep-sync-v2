@@ -26,6 +26,9 @@ jobs:
       - name: Type-check the frontend
         run: npm run check
 
+      - name: Frontend unit tests
+        run: npm test
+
       # The Rust crate embeds the built frontend, so it must exist before cargo runs.
       - name: Build the frontend
         run: npm run build

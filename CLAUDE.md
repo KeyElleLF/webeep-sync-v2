@@ -82,8 +82,22 @@ logica di sync e corsi.
   riesce); `error` resta per-azione per i controlli `if (error)`. Righe dei corsi: spinner sul corso in
   sincronizzazione (per nome, da `sync-progress`), «+N» o ⚠ dall'ultimo sync (`results`, `RowStatus`
   in `format.ts`), cartella mostrata solo se diversa dal nome, «Superato/Ignora» visibili sulla riga
-  sotto il mouse o col fuoco, nomi in maiuscoletto. Intestazione di pagina sempre alta 56 px; il
-  contenuto si ricrea a ogni scheda (`{#key tab}`). Niente animazioni legate allo scorrimento.
+  sotto il mouse o col fuoco. Intestazione di pagina sempre alta 56 px; il contenuto si ricrea a
+  ogni scheda (`{#key tab}`), **senza animazione d'ingresso** (tolta il 2026-11-24). Niente
+  animazioni legate allo scorrimento.
+- **Sistema unico** (2026-11-24, terza critica di impeccable, approvata dall'utente; sostituisce le
+  regole sopra dove diverge): testo solo 13/14/16/20 px (`--fs-sm/md/lg/xl`, 28 px `--fs-display`
+  solo per il nome nella schermata di benvenuto), pesi 400/500/600, raggi 6/8/12 (`--r-*`) e pillole
+  tonde, tempi `--t-out`/`--t-in`/`--t-panel` (120/150/200 ms). Vietati: maiuscolo spaziato,
+  testo sotto i 13 px, glow e sfocature, ombre sui bottoni, animazioni di altezza/larghezza, comparse
+  con scala (`pop` tolto), barrette su un lato dei riquadri. **Vocabolario degli stati:** conteggi =
+  pillola neutra (`.badge`, fondo `--raised`); nuovo/non visto = pallino cobalto (`.new-dot`);
+  urgenza = solo il colore del testo (`--warn` entro 24 ore, `--danger` più la parola «Scaduta»);
+  errore = icona rossa più una frase; fatto = spunta `--ok`. **Nomi dei corsi in Title Case**
+  («Data Mining»): `courseTitle()` in `src/lib/course-title.ts` (test con `npm test`, runner di
+  Node), solo in visualizzazione; le cartelle sul disco restano con il nome di WeBeep. Gli aiuti
+  sempre visibili stanno in una «i» (`InfoTip`) accanto al titolo; la nota «non ufficiale» sta in
+  Impostazioni → Problemi e segnalazioni.
   **Scorrimento fluido** (`src/lib/smooth-scroll.ts`, installato in `+page.svelte`): solo per gli
   scatti della rotellina del mouse, nel pannello sotto il puntatore (con passaggio al pannello padre ai
   bordi); touchpad, Ctrl+rotellina, Maiusc e «riduci animazioni» restano nativi; tastiera e scroll da
@@ -114,7 +128,8 @@ logica di sync e corsi.
     «Non noto: scegli» al posto di «Auto: ?»; «+N» e ⚠ sono pulsanti che aprono sotto la riga i
     file arrivati o il motivo dell'errore, con «Apri cartella del corso»; «Superato» sempre
     visibile negli esami in sospeso; «N corsi da sincronizzare».
-  - **Coerenza e tastiera**: `.course-name` (maiuscoletto) per i nomi dei corsi ovunque; «Aggiorna»
+  - **Coerenza e tastiera**: nomi dei corsi con lo stesso stile ovunque (dal 2026-11-24 in Title Case
+    con `courseTitle()`, non più `.course-name` in maiuscoletto); «Aggiorna»
     in Bacheca e Scadenze; un solo bottone pieno per schermata; righe delle scadenze cliccabili con
     tempo relativo; filtri e selezione conservati tra le schede (`src/lib/view-state.svelte.ts`);
     fuoco intrappolato nei dialoghi (`src/lib/focus-trap.ts`); scorciatoie Ctrl+R/F5 (sync, al
@@ -137,7 +152,8 @@ logica di sync e corsi.
   installato pesa circa 21 MB dalla 0.1.3: +8 MB per la lettura dei PDF e `panic = "unwind"`). La versione si cambia in `src-tauri/tauri.conf.json`, `Cargo.toml` e
   `package.json`.
 - Test e qualità: `cd src-tauri; cargo test; cargo clippy --all-targets -- -D warnings; cargo fmt`,
-  poi `npm run check`. Copertura: `cargo llvm-cov --summary-only`.
+  poi `npm run check` e `npm test` (funzioni pure del frontend, runner di Node). Copertura:
+  `cargo llvm-cov --summary-only`.
 - **Shell = Windows PowerShell 5.1.** Non riscrivere i file con `Get-Content`/`Set-Content`:
   corrompono l'UTF-8 (è → Ã¨) e aggiungono il BOM. Usare Edit/Write; per gli script node scriverli
   nello scratchpad (evitare `node -e` con virgolette annidate). Messaggi di commit con virgolette:

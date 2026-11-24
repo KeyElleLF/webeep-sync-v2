@@ -109,10 +109,8 @@
     padding-top: 16px;
     border-top: 1px solid var(--border);
     color: var(--muted);
-    font-size: 0.8rem;
+    font-size: var(--fs-sm);
     font-weight: 600;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
   }
 
   /* The first section sits right under the card title. */
@@ -137,7 +135,7 @@
   .muted {
     color: var(--muted);
     margin: 5px 0 0;
-    font-size: 0.86em;
+    font-size: var(--fs-sm);
     line-height: 1.5;
   }
 

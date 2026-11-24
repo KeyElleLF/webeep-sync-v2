@@ -85,6 +85,7 @@ export const it = {
   "courses.selectionHint":
     "La selezione segue lo stato del corso; le tue scelte manuali hanno sempre la precedenza. " +
     "«Superato» e «Ignora» valgono per tutti i corsi dello stesso insegnamento.",
+  "courses.selectionInfoLabel": "Come funziona la selezione dei corsi",
   "courses.col.semester": "Semestre",
   "courses.col.folder": "Cartella",
   "courses.section.current.title": "Questo semestre",
@@ -187,6 +188,7 @@ export const it = {
     "Link che i docenti mettono su WeBeep al posto dei file (cartelle OneDrive, registrazioni, " +
     "repository). Si aprono nel browser: i file scaricati da lì mettili nella cartella del " +
     "corso, in una sottocartella tua. L'app non li tocca mai.",
+  "links.infoLabel": "Che cosa sono questi link",
   "links.empty":
     "Nessun link nei corsi sincronizzati. I link compaiono dopo un sync: se un corso ha solo " +
     "link e nessun file, assicurati che sia selezionato nella scheda Corsi.",
@@ -216,6 +218,7 @@ export const it = {
   "deadlines.refresh": "Aggiorna",
   "deadlines.hint":
     "Consegne e quiz dei prossimi 14 giorni. Ricevi un promemoria 24 ore prima, se l'app è aperta.",
+  "deadlines.infoLabel": "Quali scadenze compaiono",
   "deadlines.notLoaded": "Scadenze non ancora caricate.",
   "deadlines.empty": "Nessuna scadenza nei prossimi 14 giorni.",
   "deadlines.col.due": "Scadenza",

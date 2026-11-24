@@ -140,7 +140,7 @@
 
   header h2 {
     margin: 0;
-    font-size: 1.15rem;
+    font-size: var(--fs-lg);
   }
 
   .loaded {
@@ -186,7 +186,7 @@
   }
 
   .big {
-    font-size: 1.1rem;
+    font-size: var(--fs-lg);
     font-weight: 600;
   }
 
@@ -206,14 +206,14 @@
   }
 
   textarea {
-    font-size: 0.9em;
+    font-size: var(--fs-sm);
     padding: 9px 10px;
     resize: vertical;
   }
 
   .how {
     margin-top: 14px;
-    font-size: 0.9em;
+    font-size: var(--fs-sm);
   }
 
   .how summary {
@@ -241,6 +241,6 @@
   .note {
     margin-bottom: 0;
     color: var(--muted);
-    font-size: 0.85em;
+    font-size: var(--fs-sm);
   }
 </style>

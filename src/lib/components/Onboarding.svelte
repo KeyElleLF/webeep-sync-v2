@@ -58,8 +58,8 @@
     border: 1.5px solid var(--border-strong);
     border-radius: 50%;
     color: var(--muted);
-    font-size: 0.75rem;
-    font-weight: 700;
+    font-size: var(--fs-sm);
+    font-weight: 600;
     font-variant-numeric: tabular-nums;
     box-sizing: border-box;
   }

@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { Announcement, CourseRow } from "$lib/api";
+  import { courseTitle } from "$lib/course-title";
   import { formatBytes } from "$lib/format";
   import { locale, t } from "$lib/i18n/index.svelte";
   import { discussionUrl, interceptLinks, openExternal } from "$lib/links";
@@ -27,7 +28,7 @@
     new Intl.DateTimeFormat(locale(), { day: "numeric", month: "short", year: "numeric" }),
   );
 
-  const names = $derived(new Map(courses.map((c) => [c.id, c.name])));
+  const names = $derived(new Map(courses.map((c) => [c.id, courseTitle(c.name)])));
   const withPosts = $derived(
     [...new Set(announcements.map((a) => a.courseId))]
       .map((id) => ({ id, name: names.get(id) ?? t("common.courseFallback", { id }) }))
@@ -119,7 +120,7 @@
               <span class="subject ellipsis">{a.subject}</span>
               <span class="date">{shortDate(a.created)}</span>
             </span>
-            <span class="course course-name ellipsis">{names.get(a.courseId) ?? ""}</span>
+            <span class="course ellipsis">{names.get(a.courseId) ?? ""}</span>
           </button>
         </li>
       {/each}
@@ -135,7 +136,7 @@
           {#if selected.pinned}<Icon name="pin" size={17} class="pin" />{/if}{selected.subject}
         </h2>
         <p class="meta">
-          <span class="course-name">{names.get(selected.courseId) ?? ""}</span> · {selected.author} · {FULL.format(
+          <span>{names.get(selected.courseId) ?? ""}</span> · {selected.author} · {FULL.format(
             new Date(selected.created * 1000),
           )}
         </p>
@@ -197,7 +198,7 @@
     gap: 10px;
     align-items: center;
     color: var(--muted);
-    font-size: 0.9em;
+    font-size: var(--fs-sm);
     cursor: pointer;
     user-select: none;
   }
@@ -264,14 +265,13 @@
     min-width: 0;
   }
 
-  /* Unread: a violet dot, and the subject in bold. */
+  /* Unread: the cobalt dot, and the subject in bold. */
   .dot {
     flex: none;
     width: 7px;
     height: 7px;
     border-radius: 50%;
     background: var(--accent);
-    animation: pop 260ms var(--ease-enter);
   }
 
   /* Pinned is not a warning: the icon alone marks it. */
@@ -284,13 +284,13 @@
   }
 
   .unread .subject {
-    font-weight: 650;
+    font-weight: 600;
   }
 
   .date,
   .course {
     color: var(--muted);
-    font-size: 0.86em;
+    font-size: var(--fs-sm);
   }
 
   .date {
@@ -302,10 +302,6 @@
     color: var(--accent);
   }
 
-  .course.course-name {
-    font-size: 0.96em;
-  }
-
   .reader {
     min-height: 0;
     overflow-y: auto;
@@ -313,7 +309,7 @@
   }
 
   .post {
-    animation: rise-in 220ms var(--ease-enter);
+    animation: rise-in var(--t-panel) var(--ease-enter);
   }
 
   .reader header {
@@ -327,8 +323,8 @@
     align-items: center;
     gap: 8px;
     margin: 0 0 6px;
-    font-size: 1.3rem;
-    font-weight: 650;
+    font-size: var(--fs-xl);
+    font-weight: 600;
   }
 
   .reader h2 :global(.pin) {
@@ -342,12 +338,12 @@
   .meta {
     margin: 0 0 8px;
     color: var(--muted);
-    font-size: 0.88em;
+    font-size: var(--fs-sm);
   }
 
   .message {
     max-width: 75ch;
-    font-size: 1.02em;
+    font-size: var(--fs-md);
     line-height: 1.6;
     overflow-wrap: anywhere;
   }
@@ -404,7 +400,7 @@
 
   .size {
     flex: none;
-    font-size: 0.85em;
+    font-size: var(--fs-sm);
     font-variant-numeric: tabular-nums;
   }
 

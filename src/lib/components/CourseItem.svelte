@@ -2,6 +2,7 @@
   import type { CourseRow, ManualState, SemesterSource } from "$lib/api";
   import { isActive, semesterLabel, semesterNumber, type RowStatus } from "$lib/format";
   import { t, tn, type MessageKey } from "$lib/i18n/index.svelte";
+  import { courseTitle } from "$lib/course-title";
   import Icon from "./Icon.svelte";
 
   interface Props {
@@ -108,7 +109,7 @@
     />
     <span class="course">
       <span class="title">
-        <label class="name ellipsis" for={pickId} title={course.fullname}>{course.name}</label>
+        <label class="name ellipsis" for={pickId} title={course.fullname}>{courseTitle(course.name)}</label>
         {#if syncing}
           <span class="spinner" role="img" aria-label={t("courses.rowSyncing")}></span>
         {:else if status?.kind === "error"}
@@ -240,7 +241,7 @@
     <div class="confirm">
       <span>
         {t("courses.confirmPassed.before")}
-        <strong>{course.name}</strong>
+        <strong>{courseTitle(course.name)}</strong>
         {t("courses.confirmPassed.after")}{siblings > 0
           ? ` ${tn("courses.confirmSiblings", siblings)}`
           : ""}?
@@ -307,12 +308,8 @@
     min-width: 0;
   }
 
-  /* WeBeep sends names in capitals: small caps keep the shape without shouting. */
   .name {
-    font-weight: 650;
-    font-variant-caps: all-small-caps;
-    font-size: 1.15em;
-    letter-spacing: 0.03em;
+    font-weight: 600;
     cursor: pointer;
     transition: color var(--t-out) var(--ease);
   }
@@ -324,32 +321,34 @@
     gap: 0;
     padding: 0 6px;
     border: none;
-    border-radius: 9px;
+    border-radius: 999px;
     box-shadow: none;
-    font-size: 0.82em;
+    font-size: var(--fs-sm);
     font-weight: 600;
     line-height: 18px;
     font-variant-numeric: tabular-nums;
-    animation: pop 260ms var(--ease-enter);
+    animation: fade-in var(--t-in) var(--ease);
   }
 
+  /* New files: a neutral count, like every count in the app. */
   .state.added {
-    background: color-mix(in srgb, var(--ok) 14%, transparent);
-    color: var(--ok);
+    background: var(--raised);
+    color: var(--text);
   }
 
   .state.added:hover {
-    background: color-mix(in srgb, var(--ok) 26%, transparent);
+    background: var(--raised-hover);
   }
 
+  /* An error: the red icon alone; the reason opens under the row. */
   .state.error {
     padding: 0 5px;
-    background: color-mix(in srgb, var(--danger) 16%, transparent);
+    background: none;
     color: var(--danger);
   }
 
   .state.error:hover {
-    background: color-mix(in srgb, var(--danger) 28%, transparent);
+    background: var(--raised);
   }
 
   .inactive .name,
@@ -364,7 +363,7 @@
 
   .meta {
     color: var(--muted);
-    font-size: 0.85em;
+    font-size: var(--fs-sm);
   }
 
   /* The semester reads as text; "Cambia" opens the choice, like the folder next to it. */
@@ -379,13 +378,13 @@
 
   .semester-text {
     color: var(--muted);
-    font-size: 0.9em;
+    font-size: var(--fs-sm);
     white-space: nowrap;
   }
 
   .semester select {
     width: 100%;
-    font-size: 0.9em;
+    font-size: var(--fs-sm);
     padding-block: 4px;
   }
 
@@ -444,7 +443,7 @@
   }
 
   .path {
-    font-size: 0.9em;
+    font-size: var(--fs-sm);
   }
 
   .path.same {
@@ -455,13 +454,13 @@
   .folder input {
     flex: 1;
     min-width: 0;
-    font-size: 0.9em;
+    font-size: var(--fs-sm);
     padding-block: 4px;
   }
 
   button.small {
     padding: 3px 10px;
-    font-size: 0.85em;
+    font-size: var(--fs-sm);
   }
 
   .detail,
@@ -472,13 +471,13 @@
     margin: 2px 0 4px;
     padding: 8px 12px;
     border-radius: var(--r-md);
-    animation: rise-in 200ms var(--ease-enter);
+    animation: rise-in var(--t-panel) var(--ease-enter);
   }
 
   .detail {
     align-items: flex-start;
-    background: color-mix(in srgb, var(--ok) 8%, transparent);
-    font-size: 0.88em;
+    background: var(--raised);
+    font-size: var(--fs-sm);
   }
 
   .detail.error {
@@ -507,7 +506,7 @@
     align-items: center;
     gap: 8px;
     background: var(--selected);
-    font-size: 0.9em;
+    font-size: var(--fs-sm);
   }
 
   .confirm span {

@@ -61,7 +61,10 @@
 </script>
 
 <div class="bar">
-  <span class="selected"><strong>{selectedCount}</strong> {tn("courses.selected", selectedCount)}</span>
+  <span class="selected"
+    ><strong>{selectedCount}</strong> {tn("courses.selected", selectedCount)}
+    <InfoTip text={t("courses.selectionHint")} label={t("courses.selectionInfoLabel")} /></span
+  >
   <span class="plan">
     <button class="small" {disabled} onclick={onplan}>
       {planLoaded ? t("plan.loadedButton") : t("plan.importButton")}
@@ -73,7 +76,6 @@
     {t("courses.showAll")}{#if hiddenCount > 0}&nbsp;({hiddenCount}){/if}
   </label>
 </div>
-<p class="hint">{t("courses.selectionHint")}</p>
 
 <div class="table">
   <div class="row head" aria-hidden="true">
@@ -116,10 +118,13 @@
     justify-content: space-between;
     align-items: center;
     gap: 8px 16px;
+    margin-bottom: 16px;
   }
 
   .selected {
-    font-size: 1.02em;
+    display: flex;
+    align-items: center;
+    gap: 6px;
   }
 
   .selected strong {
@@ -135,7 +140,7 @@
 
   button.small {
     padding: 4px 12px;
-    font-size: 0.9em;
+    font-size: var(--fs-sm);
   }
 
   .bar label {
@@ -150,13 +155,6 @@
 
   .bar label:hover {
     color: var(--text);
-  }
-
-  .hint {
-    margin: 6px 0 16px;
-    color: var(--muted);
-    font-size: 0.88em;
-    max-width: 110ch;
   }
 
   .table {
@@ -184,10 +182,8 @@
     gap: 12px;
     padding: 9px 12px;
     color: var(--muted);
-    font-size: 0.8em;
+    font-size: var(--fs-sm);
     font-weight: 600;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
     background: var(--card);
     border-bottom: 1px solid var(--border);
     user-select: none;
@@ -199,7 +195,7 @@
     gap: 8px;
     margin: 0;
     padding: 12px 12px 7px;
-    font-size: 0.92rem;
+    font-size: var(--fs-sm);
     font-weight: 600;
     background: rgba(0, 0, 0, 0.14);
     border-bottom: 1px solid var(--border);
@@ -214,10 +210,10 @@
     display: inline-block;
     min-width: 18px;
     padding: 0 6px;
-    border-radius: 9px;
+    border-radius: 999px;
     background: rgba(255, 255, 255, 0.07);
     color: var(--muted);
-    font-size: 0.86em;
+    font-size: var(--fs-sm);
     font-weight: 600;
     line-height: 18px;
     text-align: center;
@@ -226,9 +222,8 @@
 
   .group-hint {
     color: var(--muted);
-    font-size: 0.95em;
+    font-size: var(--fs-md);
     font-weight: 400;
-    letter-spacing: 0;
   }
 
   ul {

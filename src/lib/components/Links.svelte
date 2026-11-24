@@ -50,8 +50,6 @@
   }
 </script>
 
-<p class="hint">{t("links.hint")}</p>
-
 {#if courses.length === 0}
   <p class="empty"><Icon name="links" size={18} />{t("links.empty")}</p>
 {/if}
@@ -77,7 +75,7 @@
 {#snippet card(course: (typeof courses)[number])}
   <section class="card course">
     <header>
-      <h2 class="course-name">{course.name}</h2>
+      <h2>{course.name}</h2>
       <button class="small" {disabled} onclick={() => onfolder(course.id)}>
         <Icon name="folder" size={14} />{t("links.openFolder")}
       </button>
@@ -90,9 +88,12 @@
           {#each group.items as link (link.id)}
             <li>
               <button class="open" title={link.url} onclick={() => onopen(link)}>
+                {#if !link.seen}
+                  <span class="new-dot" aria-hidden="true"></span>
+                  <span class="sr-only">{t("links.new")}</span>
+                {/if}
                 <span class="name">{displayName(link.name)}</span>
                 <Icon name="external" size={13} class="arrow" />
-                {#if !link.seen}<span class="badge">{t("links.new")}</span>{/if}
               </button>
               <span class="where ellipsis" title="{displayName(link.section)} · {link.url}">
                 {host(link.url)} · {displayName(link.section)}
@@ -109,7 +110,7 @@
   .hint {
     margin: 0 0 18px;
     color: var(--muted);
-    font-size: 0.88em;
+    font-size: var(--fs-sm);
     max-width: 66ch;
   }
 
@@ -162,18 +163,16 @@
     margin-bottom: 10px;
   }
 
-  /* Small caps (shared .course-name) are as tall as lowercase letters: a larger size keeps
-     the course name the strongest line of the card. */
   header h2 {
     margin: 0;
-    font-size: 1.28rem;
-    font-weight: 650;
+    font-size: var(--fs-lg);
+    font-weight: 600;
   }
 
   button.small {
     flex: none;
     padding: 4px 10px;
-    font-size: 0.84em;
+    font-size: var(--fs-sm);
   }
 
   details + details {
@@ -184,7 +183,7 @@
     width: fit-content;
     padding: 4px 0;
     color: var(--muted);
-    font-size: 0.86em;
+    font-size: var(--fs-sm);
     font-weight: 600;
     transition: color var(--t-out) var(--ease);
   }
@@ -203,9 +202,9 @@
     min-width: 16px;
     margin-left: 4px;
     padding: 0 5px;
-    border-radius: 8px;
+    border-radius: var(--r-md);
     background: rgba(255, 255, 255, 0.07);
-    font-size: 0.9em;
+    font-size: var(--fs-sm);
     line-height: 16px;
     text-align: center;
     font-variant-numeric: tabular-nums;
@@ -283,6 +282,6 @@
 
   .where {
     color: var(--muted);
-    font-size: 0.86em;
+    font-size: var(--fs-sm);
   }
 </style>

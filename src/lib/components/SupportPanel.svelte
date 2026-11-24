@@ -80,7 +80,7 @@
   .hint {
     margin: 14px 0 6px;
     color: var(--muted);
-    font-size: 0.9em;
+    font-size: var(--fs-sm);
   }
 
   .preview {
@@ -89,9 +89,9 @@
     margin: 0 0 10px;
     padding: 10px 12px;
     border: 1px solid var(--border);
-    border-radius: 6px;
+    border-radius: var(--r-sm);
     background: var(--bg);
-    font-size: 0.8em;
+    font-size: var(--fs-sm);
     white-space: pre-wrap;
     overflow-wrap: anywhere;
   }

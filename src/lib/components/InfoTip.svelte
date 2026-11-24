@@ -37,8 +37,8 @@
     border: 1px solid var(--accent);
     border-radius: 50%;
     color: var(--accent);
-    font-size: 0.72rem;
-    font-weight: 700;
+    font-size: var(--fs-sm);
+    font-weight: 600;
     cursor: help;
     transition:
       background-color var(--t-out) var(--ease),
@@ -66,10 +66,10 @@
     width: 340px;
     padding: 10px 12px;
     border: 1px solid var(--border);
-    border-radius: 8px;
+    border-radius: var(--r-md);
     background: #1a1a1a;
     color: var(--text);
-    font-size: 0.85rem;
+    font-size: var(--fs-sm);
     font-weight: 400;
     line-height: 1.5;
     white-space: normal;
