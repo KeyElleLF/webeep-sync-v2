@@ -183,6 +183,23 @@ export interface Announcement {
   read: boolean;
 }
 
+/** What happened to a file in a sync (`store/history.rs`). */
+export type FileChange = "downloaded" | "updated" | "conflict";
+
+export interface HistoryFile {
+  courseId: number;
+  change: FileChange;
+  /** Inside the course folder, `/`-separated. */
+  path: string;
+}
+
+/** A sync that brought files, for the "Oggi" page. */
+export interface SyncRecord {
+  /** Unix seconds. */
+  finished: number;
+  files: HistoryFile[];
+}
+
 export interface Deadline {
   id: number;
   name: string;
@@ -274,6 +291,11 @@ export const api = {
   listLinks: () => call<CourseLink[]>("list_links"),
   markLinksSeen: (id: number | null) => call<void>("mark_links_seen", { id }),
   openCourseFolder: (courseId: number) => call<void>("open_course_folder", { courseId }),
+  syncHistory: (days: number) => call<SyncRecord[]>("sync_history", { days }),
+  /** When the app was last opened (Unix seconds, null the first time); records now. */
+  markTodayOpened: () => call<number | null>("mark_today_opened"),
+  revealCourseFile: (courseId: number, path: string) =>
+    call<void>("reveal_course_file", { courseId, path }),
   studyPlanStatus: () => call<PlanStatus | null>("study_plan_status"),
   importStudyPlan: (path: string) => call<PlanStatus>("import_study_plan", { path }),
   chooseStudyPlan: () => call<PlanStatus | null>("choose_study_plan"),

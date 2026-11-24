@@ -219,6 +219,15 @@ const EN: &[(&str, &str)] = &[
         "impossibile aprire la cartella: {}",
         "cannot open the folder: {}",
     ),
+    ("percorso non valido: «{}»", "invalid path: “{}”"),
+    (
+        "il file non c'è più: è stato spostato o eliminato",
+        "the file is no longer there: it was moved or deleted",
+    ),
+    (
+        "impossibile mostrare il file: {}",
+        "cannot show the file: {}",
+    ),
     ("semestre non valido", "invalid semester"),
     (
         "nessuna pulizia in attesa per questo corso",

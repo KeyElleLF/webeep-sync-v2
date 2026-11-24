@@ -23,6 +23,7 @@
     type Settings,
     type StateOutcome,
     type SyncProgress,
+    type SyncRecord,
   } from "$lib/api";
   import { courseTitle } from "$lib/course-title";
   import { formatBytes, isActive, type RowStatus } from "$lib/format";
@@ -58,9 +59,12 @@
   import Icon, { type IconName } from "$lib/components/Icon.svelte";
   import { installSmoothScroll } from "$lib/smooth-scroll";
   import SyncSummary from "$lib/components/SyncSummary.svelte";
+  import Today from "$lib/components/Today.svelte";
+  import { view } from "$lib/view-state.svelte";
 
-  type Tab = "courses" | "links" | "board" | "deadlines" | "settings";
+  type Tab = "today" | "courses" | "links" | "board" | "deadlines" | "settings";
   const TITLES: Record<Tab, MessageKey> = {
+    today: "nav.today",
     courses: "nav.courses",
     links: "nav.links",
     board: "nav.board",
@@ -68,6 +72,7 @@
     settings: "nav.settings",
   };
   const ICONS: Record<Tab, IconName> = {
+    today: "inbox",
     courses: "courses",
     links: "links",
     board: "board",
@@ -82,7 +87,7 @@
     repointed: "courses.folderRepointed",
   } as const;
 
-  let tab = $state<Tab>("courses");
+  let tab = $state<Tab>("today");
   let session = $state<SessionInfo | null>(null);
   /** What the app is doing, as a text key (translated when shown, so it follows the language). */
   let busy = $state<MessageKey | null>(null);
@@ -95,7 +100,6 @@
   /** An automatic sync is running (known from its start event, before any progress). */
   let backgroundSync = $state(false);
   let cancelling = $state(false);
-  /** "Tutto aggiornato · …" after a sync, for a few seconds in the status bar. */
   /** How the last sync ended: stays in the status bar until the next sync starts. */
   let doneMessage = $state<string | null>(null);
   /** The tick in the sync button, for a few seconds after the end. */
@@ -117,6 +121,13 @@
   let muted = $state<number[]>([]);
   let deadlines = $state<Deadline[] | null>(null);
   let links = $state<CourseLink[]>([]);
+  /** What the syncs of the last days brought, for "Oggi". */
+  let history = $state<SyncRecord[]>([]);
+  /** When the app was opened before this session: what came after it is new on "Oggi". */
+  let lastOpened = $state<number | null>(null);
+  /** When "Oggi" was last left in this session: its badge counts what arrived after. */
+  let todayLeft = $state<number | null>(null);
+  let todayMarked = false;
   let planStatus = $state<PlanStatus | null>(null);
   let planOpen = $state(false);
   let planFeedback = $state<Feedback | null>(null);
@@ -137,6 +148,16 @@
   );
   const visibleLinks = $derived(links.filter((l) => activeNames.has(l.courseId)));
   const newLinks = $derived(visibleLinks.filter((l) => !l.seen).length);
+  /** New on "Oggi" since it was last looked at: syncs that brought files, announcements, links. */
+  const todayNew = $derived.by(() => {
+    const after = Math.max(lastOpened ?? Infinity, todayLeft ?? 0);
+    if (!Number.isFinite(after)) return 0;
+    return (
+      history.filter((r) => r.finished > after).length +
+      announcements.filter((a) => a.created > after).length +
+      visibleLinks.filter((l) => !l.seen && l.firstSeen > after).length
+    );
+  });
   const upcomingIds = $derived(
     new Set((courses ?? []).filter((c) => c.state === "upcoming").map((c) => c.id)),
   );
@@ -145,7 +166,14 @@
       id,
       label: t(TITLES[id]),
       icon: ICONS[id],
-      badge: id === "board" ? unread : id === "links" ? newLinks : undefined,
+      badge:
+        id === "board"
+          ? unread
+          : id === "links"
+            ? newLinks
+            : id === "today" && tab !== "today"
+              ? todayNew
+              : undefined,
       alert: shownError?.tab === id && tab !== id,
     })),
   );
@@ -245,10 +273,34 @@
     lastSync = (await run("status.readingSettings", api.lastSync)) ?? lastSync;
     announcements = (await run("status.readingBoard", api.listAnnouncements)) ?? announcements;
     await loadLinks();
+    await loadHistory();
+    if (!todayMarked) {
+      todayMarked = true;
+      lastOpened = await api.markTodayOpened().catch(() => null);
+    }
     planStatus = (await run("status.readingSettings", api.studyPlanStatus)) ?? null;
     muted = (await run("status.readingBoard", api.mutedCourses)) ?? muted;
     await loadCourses();
     cleanups = (await run("status.checkingPassed", api.pendingCleanups)) ?? cleanups;
+    // Before the first sync the app opens on the course choice; afterwards on "Oggi".
+    if (!root || !lastSync) tab = "courses";
+    else if (deadlines === null) void loadDeadlines();
+  }
+
+  async function loadHistory() {
+    history = (await run("status.readingHistory", () => api.syncHistory(7))) ?? history;
+  }
+
+  async function revealFile(courseId: number, path: string) {
+    await run("status.openingCourseFolder", () => api.revealCourseFile(courseId, path));
+  }
+
+  /** "Leggi nella Bacheca" on "Oggi": the board opens on that announcement. */
+  function readAnnouncement(id: number) {
+    view.boardCourse = "all";
+    view.boardUnreadOnly = false;
+    view.boardSelected = id;
+    open("board");
   }
 
   async function loadCourses() {
@@ -412,6 +464,7 @@
     // File dates just learned refine the semester guesses.
     await loadCourses();
     await loadLinks();
+    await loadHistory();
   }
 
   function rowStatus(s: CourseSummary): RowStatus {
@@ -518,6 +571,7 @@
   }
 
   function open(next: Tab) {
+    if (tab === "today" && next !== "today") todayLeft = Math.floor(Date.now() / 1000);
     tab = next;
     if (next === "deadlines" && deadlines === null) void loadDeadlines();
   }
@@ -682,8 +736,22 @@
 
       <!-- Re-created on every tab: each page opens at its top (no entrance animation). -->
       {#key tab}
-      <div class="content" class:fill={tab === "board" || tab === "courses"}>
-        {#if tab === "courses"}
+      <div class="content" class:fill={tab === "board" || tab === "courses" || tab === "today"}>
+        {#if tab === "today"}
+          <Today
+            {history}
+            {announcements}
+            links={visibleLinks}
+            {deadlines}
+            courses={courses ?? []}
+            {lastOpened}
+            onreveal={revealFile}
+            onfolder={openCourseFolder}
+            onannouncement={readAnnouncement}
+            onlink={openLink}
+            ondeadlines={() => open("deadlines")}
+          />
+        {:else if tab === "courses"}
           {#if !root || !lastSync || summaries}
             <div class="above">
               {#if !root || !lastSync}

@@ -11,6 +11,7 @@ pub mod study_plan;
 pub mod support;
 pub mod sync;
 pub mod teaching;
+pub mod today;
 
 use serde::Serialize;
 

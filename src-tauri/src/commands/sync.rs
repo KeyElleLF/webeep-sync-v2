@@ -8,7 +8,7 @@ use std::time::SystemTime;
 use serde::Serialize;
 use tauri::{AppHandle, Emitter, Manager, State};
 use tokio::sync::Semaphore;
-use tracing::info;
+use tracing::{info, warn};
 
 use super::shared::{LAST_SYNC_KEY, fetch_courses, locked, saved_root, today};
 use super::{CommandError, CommandResult};
@@ -19,6 +19,7 @@ use crate::moodle::client::MoodleClient;
 use crate::moodle::error::MoodleError;
 use crate::notify::links::new_links_notice;
 use crate::state::AppState;
+use crate::store::history::{HistoryFile, history_files};
 use crate::sync::download::{Fetcher, RetryPolicy};
 use crate::sync::local::unix_seconds;
 use crate::sync::run::{CourseJob, CourseSummary, SyncContext};
@@ -180,7 +181,16 @@ async fn sync_selected(
         })
         .await?;
     let now = unix_seconds(SystemTime::now());
-    locked(state)?.set_setting(LAST_SYNC_KEY, &now.to_string())?;
+    let files: Vec<HistoryFile> = summaries
+        .iter()
+        .flat_map(|s| history_files(s.id, &s.report))
+        .collect();
+    let mut store = locked(state)?;
+    store.set_setting(LAST_SYNC_KEY, &now.to_string())?;
+    // The history only feeds the "Oggi" page: a failure there must not fail the sync.
+    if let Err(err) = store.record_sync(now, &files) {
+        warn!("sync history not saved: {err}");
+    }
     info!("sync finished");
     Ok(summaries)
 }

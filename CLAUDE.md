@@ -139,8 +139,20 @@ logica di sync e corsi.
     in Bacheca e Scadenze; un solo bottone pieno per schermata; righe delle scadenze cliccabili con
     tempo relativo; filtri e selezione conservati tra le schede (`src/lib/view-state.svelte.ts`);
     fuoco intrappolato nei dialoghi (`src/lib/focus-trap.ts`); scorciatoie Ctrl+R/F5 (sync, al
-    posto del ricaricamento della finestra) e Ctrl+1…5 (schede), indicate nei tooltip; scheda
+    posto del ricaricamento della finestra) e Ctrl+1…6 (schede, «Oggi» per prima), indicate nei tooltip; scheda
     «Lingua / Language» separata nelle Impostazioni.
+  - **Schermata «Oggi»** (2026-11-24, scelta dell'utente: la «C» dei mockup con due aggiunte; vedi
+    `CLAUDE.local.md`): prima scheda e schermata d'apertura (dopo il primo sync; prima si apre su
+    Corsi). `Today.svelte`: diario degli ultimi 7 giorni per giorno (sync con i file per corso, avvisi
+    con due righe di testo, link aggiunti dal docente) e a destra la colonna delle scadenze a 14 giorni
+    (300 px, 248 px sotto i 1050 px). Ogni sync che porta file viene salvato (`store/history.rs`,
+    tabelle `sync_run`/`sync_file`, 30 giorni; un errore lì non fa fallire il sync). All'avvio
+    `mark_today_opened` restituisce l'apertura precedente e salva l'ora attuale: ciò che è arrivato
+    dopo ha il pallino cobalto e la riga «Già visto: ultima apertura …» separa il resto; niente da
+    svuotare a mano. Badge di «Oggi» solo fuori dalla scheda, per ciò che è arrivato dopo l'ultima
+    visita. Azioni: «Mostra» (`reveal_course_file`: Esplora file con il file selezionato, percorso
+    passato da `safe_join` dentro la cartella del corso), «Apri cartella», «Leggi nella Bacheca»
+    (apre la Bacheca su quell'avviso), «Apri nel browser».
   - **Impostazioni a righe** (2026-11-24, come le Impostazioni di Windows 11): gruppi con titolo
     da 16 px e righe in un riquadro (`.set-group`, `.set-box`, `.set-row` in `styles.css`): a
     sinistra nome e spiegazione breve, a destra il controllo; interruttori `Switch.svelte`
@@ -172,8 +184,9 @@ logica di sync e corsi.
   `git commit -F <file>`. Dopo modifiche estese, cercare `Ã`, `Â`, `â€` e BOM nei sorgenti.
 - `cargo add tauri --no-default-features` **rompe** tauri: la riga giusta è
   `tauri = { version = "2", features = [] }`.
-- **Migrazioni SQLite** (`store/mod.rs`, `MIGRATIONS`): ce ne sono 5 (4ª `course_link` e
-  `course_link_import`, 5ª `study_plan`, entrambe del 2026-11-12). **Mai modificarne una esistente**: solo aggiungerne di nuove
+- **Migrazioni SQLite** (`store/mod.rs`, `MIGRATIONS`): ce ne sono 6 (4ª `course_link` e
+  `course_link_import`, 5ª `study_plan`, entrambe del 2026-11-12; 6ª `sync_run` e `sync_file`,
+  storico dei sync per «Oggi», del 2026-11-24). **Mai modificarne una esistente**: solo aggiungerne di nuove
   in coda. Attenzione: una migrazione nuova applicata da `tauri dev` fa rifiutare il DB alle versioni
   installate più vecchie («database di una versione più recente»): dopo serve un installer nuovo.
 - Dati dell'app: DB `%APPDATA%\it.webeepsync.app\webeep-sync.sqlite`; log
@@ -206,13 +219,13 @@ logica di sync e corsi.
   - `notify/`: `html.rs` (pulizia HTML con ammonia), `announcements.rs`, `deadlines.rs`,
     `links.rs` (testo della notifica dei link nuovi).
   - `store/`: SQLite (`mod.rs` con migrazioni e baseline; `courses.rs`, `links.rs`, `notify.rs`,
-    `settings.rs`, `study_plan.rs`).
+    `settings.rs`, `study_plan.rs`, `history.rs` = storico dei sync per «Oggi», 30 giorni).
   - `commands/`: comandi Tauri sottili (`session`, `courses`, `settings`, `sync`, `teaching`,
-    `notify`, `links`, `study_plan`, `dump`, `shared`).
+    `notify`, `links`, `study_plan`, `today`, `dump`, `shared`).
   - `background.rs`: controlli periodici a finestra aperta. `logging.rs`: log su file.
     `window.rs`: istanza singola. `state.rs`: `AppState` (Store + guard «un sync alla volta»).
-- `src/`: `routes/+page.svelte` (guscio dell'app e stato: schede Corsi, Link, Bacheca, Scadenze,
-  Impostazioni), `lib/api.ts` (wrapper tipizzati di tutti i comandi), `lib/components/*`,
+- `src/`: `routes/+page.svelte` (guscio dell'app e stato: schede Oggi, Corsi, Link, Bacheca,
+  Scadenze, Impostazioni), `lib/api.ts` (wrapper tipizzati di tutti i comandi), `lib/components/*`,
   `lib/format.ts`, `lib/links.ts` (link sempre nel browser), `lib/styles.css`.
   **Layout da desktop** (2026-11-12): barra laterale (`Sidebar.svelte`, con «Sincronizza ora»),
   contenuto a tutta larghezza, barra di stato in basso; corsi a elenco e dettaglio

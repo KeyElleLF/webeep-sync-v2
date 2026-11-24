@@ -3,6 +3,7 @@
 //! Schema changes are append-only migrations tracked with `PRAGMA user_version`.
 
 pub mod courses;
+pub mod history;
 pub mod links;
 pub mod notify;
 pub mod settings;
@@ -117,6 +118,19 @@ const MIGRATIONS: &[&str] = &[
         semester INTEGER NOT NULL,
         position INTEGER NOT NULL
     );
+",
+    r"
+    CREATE TABLE sync_run (
+        id       INTEGER PRIMARY KEY AUTOINCREMENT,
+        finished INTEGER NOT NULL
+    );
+    CREATE TABLE sync_file (
+        run_id    INTEGER NOT NULL,
+        course_id INTEGER NOT NULL,
+        kind      TEXT    NOT NULL,
+        path      TEXT    NOT NULL
+    );
+    CREATE INDEX sync_file_run ON sync_file (run_id);
 ",
 ];
 
