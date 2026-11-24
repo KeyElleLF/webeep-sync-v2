@@ -79,7 +79,8 @@ logica di sync e corsi.
   quadratini; prototipo `.impeccable/mockups/sync-button.html`): **hover** come il «View project» di
   Noomo Agency, una copia bianca con testo e icona cobalto (`.hover-copy`) scoperta da una maschera
   con il bordo a pixel a scaletta (disegnata su canvas alla misura del bottone, ridisegnata con un
-  `ResizeObserver`), solo `mask-position` in 0,6 s ease-in-out, niente hover durante il sync;
+  `ResizeObserver`), solo `mask-position` in 0,6 s ease-in-out, niente hover durante il sync (sì
+  durante la spunta finale: il bottone è attivo e sembrerebbe rotto);
   **clic = «Onda»**, fondo blu scuro `#1b3670` che si riempie d'acqua cobalto dal basso in
   proporzione all'avanzamento (corsi + file, `--fill`) con due onde SVG; pieno = finito, poi la
   spunta per 8 s. Con «riduci animazioni» le onde stanno ferme. Gli altri bottoni hanno solo un
