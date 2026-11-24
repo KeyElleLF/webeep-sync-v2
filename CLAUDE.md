@@ -124,10 +124,15 @@ logica di sync e corsi.
   - **Errori**: `shownError` dice cosa è fallito (`FAILURES`: titolo, «Riprova», scheda
     d'origine); il banner compare solo su quella scheda, con un pallino rosso sulla voce del menu
     quando si è altrove.
-  - **Righe dei corsi**: semestre come testo («1° · dal piano») con «Cambia» che apre la scelta,
-    «Non noto: scegli» al posto di «Auto: ?»; «+N» e ⚠ sono pulsanti che aprono sotto la riga i
-    file arrivati o il motivo dell'errore, con «Apri cartella del corso»; «Superato» sempre
-    visibile negli esami in sospeso; «N corsi da sincronizzare».
+  - **Corsi a elenco e dettaglio** (dal 2026-11-24, sostituisce le righe con «Cambia»): a sinistra
+    i gruppi (Questo semestre, Prossimo semestre, Esami in sospeso; superati, ignorati e anni
+    precedenti dietro una voce chiusa in fondo) con casella di sync, nome e un solo segnale (spinner,
+    ⚠, «+N», «Non noto»); frecce ↑↓ per spostarsi. A destra il corso scelto (`view.courseSelected`):
+    Sincronizza (interruttore con «Attivato»), Semestre (Automatico · 1° · 2°), Cartella
+    («Rinomina…», «Apri»), Ultimo sync (file arrivati o errore), Link del corso, poi «Segna come
+    superato» (conferma in linea, fuoco sul «No») / «Ignora» / «Ripristina». Nell'intestazione
+    «N corsi da sincronizzare» con la «i» e «Importa piano di studi»; la cartella radice si cambia
+    solo nelle Impostazioni.
   - **Coerenza e tastiera**: nomi dei corsi con lo stesso stile ovunque (dal 2026-11-24 in Title Case
     con `courseTitle()`, non più `.course-name` in maiuscoletto); «Aggiorna»
     in Bacheca e Scadenze; un solo bottone pieno per schermata; righe delle scadenze cliccabili con
@@ -203,8 +208,9 @@ logica di sync e corsi.
   Impostazioni), `lib/api.ts` (wrapper tipizzati di tutti i comandi), `lib/components/*`,
   `lib/format.ts`, `lib/links.ts` (link sempre nel browser), `lib/styles.css`.
   **Layout da desktop** (2026-11-12): barra laterale (`Sidebar.svelte`, con «Sincronizza ora»),
-  contenuto a tutta larghezza, barra di stato in basso; corsi e scadenze in righe a colonne
-  (`--course-cols` in `CourseList.svelte`), bacheca a due pannelli (elenco + lettura, frecce ↑↓),
+  contenuto a tutta larghezza, barra di stato in basso; corsi a elenco e dettaglio
+  (`CourseList.svelte`, `CourseItem.svelte`, `CourseDetail.svelte`), scadenze in righe a colonne,
+  bacheca a due pannelli (elenco + lettura, frecce ↑↓),
   pulizia dei corsi superati in un modale (fuoco su «Chiedimelo più tardi»). Finestra 1180×760,
   minimo 960×560; sotto i 1050 px barra laterale e colonne si stringono. Niente layout a colonna
   stretta: non tornare a `max-width` sul contenuto.

@@ -15,6 +15,8 @@
     alert: "M12 4l9 16H3l9-16ZM12 10v4M12 17v.01",
     inbox: "M4 13l2.5-7h11l2.5 7v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-5ZM4 13h4.5l1 2h5l1-2H20",
     paperclip: "M20 11.5l-7.8 7.8a5 5 0 0 1-7.1-7.1L13 4.3a3.3 3.3 0 0 1 4.7 4.7L10 16.7a1.7 1.7 0 0 1-2.4-2.4L14.8 7",
+    file: "M7 3h7l5 5v12a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1ZM14 3v5h5",
+    chevron: "M9 6l6 6-6 6",
   } as const;
 
   export type IconName = keyof typeof PATHS;

@@ -127,6 +127,7 @@
   /** Courses, folders and the study plan stay still while a sync uses them; the rest stays usable. */
   const canEdit = $derived(idle && !syncRunning);
   const unread = $derived(announcements.filter((a) => !a.read).length);
+  const selectedCount = $derived((courses ?? []).filter((c) => c.selected).length);
   // Links of passed, ignored or past courses stay saved but are not shown.
   const activeNames = $derived(
     new Map((courses ?? []).filter((c) => isActive(c.state)).map((c) => [c.id, courseTitle(c.name)])),
@@ -597,20 +598,22 @@
     <main>
       <header class="page-head">
         <h1>{t(TITLES[tab])}</h1>
-        {#if tab === "links"}
+        {#if tab === "courses" && courses}
+          <span class="sub"
+            >{selectedCount} {tn("courses.selected", selectedCount)}</span
+          >
+          <InfoTip text={t("courses.selectionHint")} label={t("courses.selectionInfoLabel")} />
+        {:else if tab === "links"}
           <InfoTip text={t("links.hint")} label={t("links.infoLabel")} />
         {:else if tab === "deadlines"}
           <InfoTip text={t("deadlines.hint")} label={t("deadlines.infoLabel")} />
         {/if}
         <div class="actions">
           {#if tab === "courses"}
-            <span class="root" class:empty={!root} title={root ?? undefined}>
-              <Icon name="folder" size={14} />
-              <span class="ellipsis">{root ?? t("courses.noRoot")}</span>
-            </span>
-            <button onclick={chooseRoot} disabled={!canEdit}>
-              {root ? t("common.changeFolder") : t("common.chooseFolder")}
+            <button disabled={!canEdit} onclick={openPlan}>
+              {planStatus ? t("plan.loadedButton") : t("plan.importButton")}
             </button>
+            <InfoTip text={t("plan.info")} label={t("plan.infoLabel")} />
           {:else if tab === "links"}
             <button disabled={!idle || newLinks === 0} onclick={() => markLinksSeen(null)}>
               {t("links.markAllSeen")}
@@ -674,17 +677,21 @@
 
       <!-- Re-created on every tab: each page opens at its top (no entrance animation). -->
       {#key tab}
-      <div class="content" class:fill={tab === "board"}>
+      <div class="content" class:fill={tab === "board" || tab === "courses"}>
         {#if tab === "courses"}
-          {#if !root || !lastSync}
-            <Onboarding loggedIn={true} hasRoot={!!root} hasSynced={!!lastSync} />
-          {/if}
-          {#if summaries}
-            <SyncSummary
-              {summaries}
-              onclose={() => (summaries = null)}
-              onfolder={openCourseFolder}
-            />
+          {#if !root || !lastSync || summaries}
+            <div class="above">
+              {#if !root || !lastSync}
+                <Onboarding loggedIn={true} hasRoot={!!root} hasSynced={!!lastSync} />
+              {/if}
+              {#if summaries}
+                <SyncSummary
+                  {summaries}
+                  onclose={() => (summaries = null)}
+                  onfolder={openCourseFolder}
+                />
+              {/if}
+            </div>
           {/if}
           {#if courses}
             <CourseList
@@ -694,8 +701,8 @@
               onrename={rename}
               onstate={(course, state) => setState(course.teachingKey, state)}
               onsemester={setSemester}
-              planLoaded={planStatus !== null}
-              onplan={openPlan}
+              {links}
+              onopenlink={openLink}
               {results}
               syncingName={progress?.name ?? null}
               onfolder={openCourseFolder}
@@ -898,22 +905,17 @@
     margin-left: auto;
   }
 
-  .root {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    min-width: 0;
-    max-width: 420px;
-    padding: 5px 10px;
-    border-radius: var(--r-sm);
-    background: rgba(255, 255, 255, 0.04);
+  /* "8 corsi da sincronizzare": next to the title, quieter than it. */
+  .sub {
     color: var(--muted);
     font-size: var(--fs-sm);
-    user-select: text;
+    font-variant-numeric: tabular-nums;
   }
 
-  .root.empty {
-    color: var(--warn);
+  /* Onboarding and the sync summary above the course list. */
+  .above {
+    flex: none;
+    padding: 16px 24px 0;
   }
 
   /* An error stays at the top of the page until closed, with a way to report it. */

@@ -5,6 +5,7 @@ export const view = $state({
   boardCourse: "all" as number | "all",
   boardUnreadOnly: false,
   boardSelected: null as number | null,
-  /** Courses: also list passed, ignored and past courses. */
+  /** Courses: also list passed, ignored and past courses; course open in the detail pane. */
   showAllCourses: false,
+  courseSelected: null as number | null,
 });
