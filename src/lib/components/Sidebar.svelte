@@ -17,19 +17,37 @@
   import { courseTitle } from "$lib/course-title";
   import Icon from "./Icon.svelte";
 
-  // While syncing, the button itself is the progress bar: square cells fill it as courses are done,
-  // roughly left to right with a ragged edge, each popping in after a small random delay.
-  const COLS = 28;
-  const ROWS = 5;
-  const CELLS = COLS * ROWS;
-  const MAX_DELAY_MS = 260;
-  const order = Array.from({ length: CELLS }, (_, i) => ({
-    i,
-    key: ((i % COLS) / COLS) * 0.6 + Math.random() * 0.4,
-  })).sort((a, b) => a.key - b.key);
-  const rank: number[] = [];
-  order.forEach((cell, position) => (rank[cell.i] = position));
-  const delays = Array.from({ length: CELLS }, () => Math.round(Math.random() * MAX_DELAY_MS));
+  // "Sincronizza ora" (prototype .impeccable/mockups/sync-button.html, chosen on 2026-11-24).
+  // Hover: a white copy of the button is revealed by a mask whose right edge is a staircase of
+  // pixel cells; only the mask position moves, in one transition. Click: the button turns deep
+  // blue and fills from the bottom with cobalt water as the sync advances; full = done.
+  const MASK_ROWS = 5;
+  /** Cells of the staircase edge, left to right (1 = opaque); lower rows reach further right. */
+  const EDGE = [0.5, 1, 0, 1, 0.25, 0, 0.5];
+
+  /** The hover mask at the exact size of the button: opaque, then the pixel edge. */
+  function pixelMask(width: number, height: number): string {
+    const dpr = window.devicePixelRatio || 1;
+    const cell = height / MASK_ROWS;
+    const cols = Math.ceil(width / cell);
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.ceil(width * dpr);
+    canvas.height = Math.ceil(height * dpr);
+    const g = canvas.getContext("2d");
+    if (!g) return "none";
+    g.scale(dpr, dpr);
+    const start = Math.floor(((width / 1.4) * 1.04) / cell);
+    for (let r = 0; r < MASK_ROWS; r++) {
+      for (let k = 0; k < cols; k++) {
+        const rel = k - start - r;
+        const alpha = rel < 0 ? 1 : (EDGE[rel] ?? 0);
+        if (alpha <= 0) continue;
+        g.fillStyle = `rgba(0, 0, 0, ${alpha})`;
+        g.fillRect(Math.floor(k * cell), Math.floor(r * cell), Math.ceil(cell), Math.ceil(cell));
+      }
+    }
+    return `url(${canvas.toDataURL()})`;
+  }
 
   interface Props {
     items: NavItem<T>[];
@@ -72,7 +90,23 @@
     return Math.min((progress.index + inCourse) / progress.total, 1);
   });
   const percent = $derived(Math.round(fraction * 100));
-  const lit = $derived(Math.round(fraction * CELLS));
+  /** How full of water the button is: the progress while syncing, full once done. */
+  const fill = $derived(done && !syncing ? 1 : fraction);
+
+  let syncButton = $state<HTMLButtonElement>();
+  let mask = $state("none");
+  // Redrawn whenever the button changes size (the sidebar narrows under 1050 px).
+  $effect(() => {
+    const button = syncButton;
+    if (!button) return;
+    const paint = () => {
+      mask = pixelMask((button.offsetWidth + 6) * 1.4, button.offsetHeight);
+    };
+    paint();
+    const observer = new ResizeObserver(paint);
+    observer.observe(button);
+    return () => observer.disconnect();
+  });
   const initials = $derived(
     (fullname ?? "")
       .split(/\s+/)
@@ -129,25 +163,41 @@
   <div class="sync">
     <!-- Also off during an automatic sync: the backend runs one sync at a time. -->
     <button
+      bind:this={syncButton}
       class="primary sync-button"
       title="{t('sync.now')} (Ctrl+R)"
       class:busy={syncing}
+      class:done={done && !syncing}
       disabled={!canSync || syncing}
       onclick={onsync}
+      style:--fill={fill}
+      style:--px-mask={mask}
     >
-      {#if syncing}
-        <span class="px" aria-hidden="true" style:--px-cols={COLS}>
-          {#each rank as position, i}
-            <i class:on={position < lit} style:--d="{delays[i]}ms"></i>
-          {/each}
+      {#if syncing || done}
+        <span class="water" aria-hidden="true">
+          <svg viewBox="0 0 400 44" preserveAspectRatio="none">
+            <path
+              class="w1"
+              d="M0 6 Q25 0 50 6 T100 6 T150 6 T200 6 T250 6 T300 6 T350 6 T400 6 V44 H0Z"
+            />
+            <path
+              class="w2"
+              d="M0 6 Q25 12 50 6 T100 6 T150 6 T200 6 T250 6 T300 6 T350 6 T400 6 V44 H0Z"
+            />
+          </svg>
         </span>
       {/if}
-      {#if done}
-        <span class="sync-icon settled"><Icon name="check" size={16} /></span>
-      {:else}
-        <span class="sync-icon" class:spinning={syncing}><Icon name="sync" size={16} /></span>
-      {/if}
-      <span>{syncing ? t("sync.running") : t("sync.now")}</span>
+      <span class="label">
+        {#if done}
+          <span class="sync-icon settled"><Icon name="check" size={16} /></span>
+        {:else}
+          <span class="sync-icon" class:spinning={syncing}><Icon name="sync" size={16} /></span>
+        {/if}
+        <span>{syncing ? t("sync.running") : t("sync.now")}</span>
+      </span>
+      <span class="hover-copy" aria-hidden="true">
+        <Icon name="sync" size={16} /><span>{t("sync.now")}</span>
+      </span>
     </button>
     {#if progress}
       <div
@@ -277,42 +327,108 @@
   }
 
   .sync-button {
-    width: 100%;
-    padding-block: 9px;
-  }
-
-  /* While syncing the button reads as working, not as switched off: a dim cobalt ground that the
-     cells fill with the full colour as the sync advances. */
-  .sync-button.busy {
-    opacity: 1;
-    border-color: color-mix(in srgb, var(--accent-strong) 60%, transparent);
-    background: color-mix(in srgb, var(--accent-strong) 22%, var(--sidebar));
-    color: var(--on-accent);
-    box-shadow: none;
-  }
-
-  .px {
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    display: grid;
-    grid-template-columns: repeat(var(--px-cols), 1fr);
-    grid-auto-rows: 1fr;
-    border-radius: inherit;
     overflow: hidden;
+    width: 100%;
+    height: 36px;
+    padding-block: 0;
+    border: none;
+  }
+
+  .label {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    gap: 8px;
     pointer-events: none;
   }
 
-  .px i {
-    background: var(--accent-strong);
-    /* Covers the hairlines between cells. */
-    box-shadow: 0 0 0 0.5px var(--accent-strong);
-    opacity: 0;
-    transition: opacity 0s linear var(--d);
+  /* Hover: the white copy, uncovered left to right by the pixel-edged mask in 0.6 s and covered
+     again on the way out. Not while syncing or just after (the button is showing progress). */
+  .hover-copy {
+    position: absolute;
+    z-index: 3;
+    top: 0;
+    left: -3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: calc(100% + 6px);
+    height: 100%;
+    background: #ffffff;
+    color: var(--accent-strong);
+    pointer-events: none;
+    -webkit-mask-image: var(--px-mask);
+    mask-image: var(--px-mask);
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-size: 140% 100%;
+    mask-size: 140% 100%;
+    -webkit-mask-position: 350% 0;
+    mask-position: 350% 0;
+    transition:
+      -webkit-mask-position 0.6s ease-in-out,
+      mask-position 0.6s ease-in-out;
   }
 
-  .px i.on {
+  .sync-button:not(.busy, .done, :disabled):hover .hover-copy,
+  .sync-button:not(.busy, .done, :disabled):focus-visible .hover-copy {
+    -webkit-mask-position: 0 0;
+    mask-position: 0 0;
+  }
+
+  /* While syncing the button reads as working, not as switched off: deep blue, filling up with
+     cobalt water as courses and files are done. */
+  .sync-button.busy {
     opacity: 1;
+    background: #1b3670;
+    color: var(--on-accent);
+  }
+
+  .water {
+    position: absolute;
+    z-index: 1;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: calc(100% + 8px);
+    transform: translateY(calc((1 - var(--fill, 0)) * 40px - 9px));
+    transition: transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+    pointer-events: none;
+  }
+
+  .water svg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 200%;
+    height: 100%;
+  }
+
+  /* Two waves drifting at different speeds and in opposite directions. */
+  .w1 {
+    fill: var(--accent-strong);
+    animation: drift 2.6s linear infinite;
+  }
+
+  .w2 {
+    fill: var(--accent-strong);
+    opacity: 0.55;
+    animation: drift 4.1s linear infinite reverse;
+  }
+
+  @keyframes drift {
+    to {
+      transform: translateX(-50%);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .w1,
+    .w2 {
+      animation: none;
+    }
   }
 
   .sync-icon {

@@ -75,9 +75,15 @@ logica di sync e corsi.
   `--t-out` 120 ms, `--t-press` 90 ms), anello di focus unico (`:focus-visible`), checkbox disegnate,
   `.switch` per le impostazioni, select con freccia propria, barre di scorrimento sottili, dialoghi
   su `.overlay`/`.dialog` globali, icone SVG proprie in `components/Icon.svelte` (nessuna libreria).
-  **Effetto pixel** (ispirato al bottone di Noomo Agency): **solo come avanzamento del sync**, dentro
-  «Sincronizza ora» (`Sidebar.svelte`, griglia 28×5, celle accese in proporzione a corso/totale, da
-  sinistra con bordo irregolare); gli altri bottoni hanno solo un hover più chiaro. Errori: `shownError`
+  **Bottone «Sincronizza ora»** (`Sidebar.svelte`; dal 2026-11-24 sostituisce la griglia 28×5 di
+  quadratini; prototipo `.impeccable/mockups/sync-button.html`): **hover** come il «View project» di
+  Noomo Agency, una copia bianca con testo e icona cobalto (`.hover-copy`) scoperta da una maschera
+  con il bordo a pixel a scaletta (disegnata su canvas alla misura del bottone, ridisegnata con un
+  `ResizeObserver`), solo `mask-position` in 0,6 s ease-in-out, niente hover durante il sync;
+  **clic = «Onda»**, fondo blu scuro `#1b3670` che si riempie d'acqua cobalto dal basso in
+  proporzione all'avanzamento (corsi + file, `--fill`) con due onde SVG; pieno = finito, poi la
+  spunta per 8 s. Con «riduci animazioni» le onde stanno ferme. Gli altri bottoni hanno solo un
+  hover più chiaro. Errori: `shownError`
   in `+page.svelte` resta in un banner rosso in cima alla pagina finché non si chiude (o finché un sync
   riesce); `error` resta per-azione per i controlli `if (error)`. Righe dei corsi: spinner sul corso in
   sincronizzazione (per nome, da `sync-progress`), «+N» o ⚠ dall'ultimo sync (`results`, `RowStatus`
@@ -118,7 +124,7 @@ logica di sync e corsi.
     sync); `sync_all` si ferma prima del corso successivo, `execute` non avvia i download non
     ancora partiti (`Done::Cancelled`, né errore né baseline) e lascia finire quelli in corso.
     Avanzamento per file: `FileProgress` (fatti/totale del corso) nell'evento `sync-progress`
-    (`filesDone`, `filesTotal`); la barra a pixel conta anche la frazione di file.
+    (`filesDone`, `filesTotal`); l'acqua del bottone conta anche la frazione di file.
   - **Fine del sync**: spunta nel bottone per 8 s (`doneFresh`) e, dal 2026-11-24, l'esito nella
     barra di stato **fino al sync successivo** (`doneMessage`, spunta verde e testo normale:
     «Tutto aggiornato · N corsi controllati», «… file nuovi o aggiornati», «annullata»).
