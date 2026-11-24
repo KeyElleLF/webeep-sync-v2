@@ -1,6 +1,6 @@
 [package]
 name = "webeep-sync"
-version = "0.3.0"
+version = "0.4.0"
 description = "Client desktop non ufficiale per sincronizzare il materiale di WeBeep"
 authors = ["WeBeep Sync contributors"]
 license = "GPL-3.0-only"
